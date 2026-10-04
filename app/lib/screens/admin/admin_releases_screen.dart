@@ -1,13 +1,14 @@
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/theme.dart';
 import '../../core/services/update_service.dart';
 import '../../core/utils/formatters.dart';
 import '../../widgets/common.dart';
+import '../../widgets/get_app_card.dart';
 import '../../widgets/icon3d.dart';
 import '../../widgets/update_gate.dart';
 
@@ -53,6 +54,25 @@ class AdminReleasesScreen extends ConsumerWidget {
                 ]),
               ),
             ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+            leading: const Icon3D(Ico3D.phone, size: 44),
+            title: const Text('Lien public de téléchargement', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: const Text('$kDownloadPage\nÀ partager sur WhatsApp, TikTok et Facebook : la page propose toujours la dernière version publiée ici, '
+                'et l’installation de la version web.'),
+            isThreeLine: true,
+            trailing: IconButton(
+              tooltip: 'Copier le lien',
+              icon: const Icon(Icons.copy_rounded),
+              onPressed: () async {
+                await Clipboard.setData(const ClipboardData(text: kDownloadPage));
+                if (context.mounted) showSuccess(context, 'Lien copié');
+              },
+            ),
           ),
         ),
         const SectionTitle('Versions publiées'),

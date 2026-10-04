@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_providers.dart';
 import '../../widgets/brand.dart';
+import '../../widgets/get_app_card.dart';
 import '../../widgets/icon3d.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nav.dart';
@@ -78,7 +79,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   child: SafeArea(
                     bottom: false,
                     child: Column(children: [
-                      const SizedBox(height: 18),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(12, 8, 12, 4),
+                        child: Align(alignment: Alignment.centerRight, child: GetAppChip()),
+                      ),
+                      const SizedBox(height: 6),
                       const BrandMark(size: 34, animate: true),
                       Expanded(
                         child: PageView.builder(

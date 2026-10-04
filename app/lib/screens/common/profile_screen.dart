@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,8 @@ import '../../providers/auth_providers.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/icon3d.dart';
+import '../../widgets/get_app_card.dart';
+import '../../core/services/pwa.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nav.dart';
 
@@ -73,6 +76,8 @@ class ProfileScreen extends ConsumerWidget {
                 MenuRow(icon: Icons.delivery_dining_outlined, label: 'Devenir livreur', image: Ico3D.scooter, onTap: () => context.push('/driver/apply')),
               MenuRow(icon: Icons.notifications_none_rounded, label: 'Notifications', image: Ico3D.bell, onTap: () => context.push('/notifications')),
               MenuRow(icon: Icons.support_agent_rounded, label: 'Contacter le support', image: Ico3D.headphone, onTap: () => context.push('/support')),
+              if (kIsWeb && !pwaIsStandalone())
+                MenuRow(icon: Icons.download_rounded, label: 'Obtenir l’application', image: Ico3D.phone, onTap: () => showGetAppSheet(context)),
             ].indexed)
               FadeSlideIn.staggered(index: i, offset: 10, child: row),
             const SizedBox(height: 10),

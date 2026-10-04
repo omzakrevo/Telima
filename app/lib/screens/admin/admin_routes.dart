@@ -38,7 +38,7 @@ const _items = [
   _NavItem('/admin/pricing', 'Tarifs', Icons.price_change_outlined, adminOnly: true),
   _NavItem('/admin/zones', 'Villes & zones', Icons.location_city_outlined, adminOnly: true),
   _NavItem('/admin/settings', 'Paramètres', Icons.tune, adminOnly: true),
-  _NavItem('/admin/releases', 'Mises à jour appli', Icons.system_update_rounded, adminOnly: true),
+  _NavItem('/admin/releases', 'Application mobile', Icons.system_update_rounded, adminOnly: true),
   _NavItem('/admin/push', 'Notifications push', Icons.notifications_active_rounded, adminOnly: true),
   _NavItem('/admin/support', 'Support', Icons.support_agent),
   _NavItem('/admin/logs', 'Journal', Icons.history_edu_outlined, adminOnly: true),

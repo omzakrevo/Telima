@@ -52,6 +52,33 @@
     <button id="telima-retry" type="button" onclick="location.reload()">Recharger</button>
   </div>
   <script>
+    // Installation comme une application (PWA) : on garde la proposition du navigateur
+    // pour l'afficher quand la personne touche « Installer sur ce téléphone ».
+    (function () {
+      var deferred = null;
+      window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); deferred = e; });
+      window.addEventListener("appinstalled", function () { deferred = null; });
+      var ua = navigator.userAgent || "";
+      window.telimaPwa = {
+        canInstall: function () { return !!deferred; },
+        isStandalone: function () {
+          return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+        },
+        platform: function () {
+          if (/iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) return "ios";
+          if (/Android/i.test(ua)) return "android";
+          return "desktop";
+        },
+        install: function () {
+          if (!deferred) return Promise.resolve("unavailable");
+          var d = deferred; deferred = null;
+          d.prompt();
+          return d.userChoice.then(function (c) { return c.outcome; }, function () { return "dismissed"; });
+        }
+      };
+    })();
+  </script>
+  <script>
     (function () {
       var splash = document.getElementById("telima-splash");
       var msg = document.getElementById("telima-msg");
@@ -78,8 +105,16 @@
           fail("Une erreur a empêché le démarrage (" + (e.message || "inconnue") + "). Rechargez la page.");
         }
       });
+      // Retire l'ancien cache hors ligne de Flutter, puis enregistre le petit service worker
+      // qui rend la version web installable comme une application.
       if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); });
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) {
+            var u = (r.active || r.waiting || r.installing || {}).scriptURL || "";
+            if (u.indexOf("flutter_service_worker") >= 0) r.unregister();
+          });
+        });
+        navigator.serviceWorker.register("sw.js").catch(function () {});
       }
 
       // Téléchargement préalable des gros fichiers avec progression et reprise automatique,

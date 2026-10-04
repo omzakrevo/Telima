@@ -171,6 +171,31 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
               ]),
             ),
+            const SizedBox(height: 10),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 180),
+              child: Row(children: [
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.local_fire_department_rounded,
+                    title: 'Trouver du gaz',
+                    caption: 'Commander · livraison',
+                    color: AppColors.accent,
+                    onTap: () => context.push('/client/gas'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.local_gas_station_rounded,
+                    title: 'Stations-service',
+                    caption: 'Essence · gasoil',
+                    color: AppColors.info,
+                    onTap: () => context.push('/client/fuel'),
+                  ),
+                ),
+              ]),
+            ),
             const SectionTitle('Services'),
             GridView.count(
               crossAxisCount: wide ? 6 : 3,
@@ -219,8 +244,9 @@ class ClientHomeScreen extends ConsumerWidget {
 
 /// Grande carte d'action secondaire (courses, trajets).
 class _MainAction extends StatelessWidget {
-  const _MainAction({required this.image, required this.title, required this.caption, required this.color, required this.onTap});
-  final String image;
+  const _MainAction({this.image, this.icon, required this.title, required this.caption, required this.color, required this.onTap});
+  final String? image;
+  final IconData? icon;
   final String title;
   final String caption;
   final Color color;
@@ -239,7 +265,7 @@ class _MainAction extends StatelessWidget {
                 height: 46,
                 decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
                 alignment: Alignment.center,
-                child: Icon3D(image, size: 34, shadow: false),
+                child: image != null ? Icon3D(image!, size: 34, shadow: false) : Icon(icon, size: 28, color: color),
               ),
               const Spacer(),
               Icon(Icons.arrow_forward_rounded, size: 20, color: color),

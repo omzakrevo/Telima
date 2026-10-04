@@ -74,6 +74,8 @@ class ProfileScreen extends ConsumerWidget {
                 MenuRow(icon: Icons.storefront_outlined, label: 'Compte professionnel', image: Ico3D.store, onTap: () => context.push('/business')),
               if (user.role == UserRole.client)
                 MenuRow(icon: Icons.delivery_dining_outlined, label: 'Devenir livreur', image: Ico3D.scooter, onTap: () => context.push('/driver/apply')),
+              if (user.role == UserRole.client)
+                MenuRow(icon: Icons.local_fire_department_outlined, label: 'Vendre du gaz / ma station', image: Ico3D.store, onTap: () => context.push('/vendor')),
               MenuRow(icon: Icons.notifications_none_rounded, label: 'Notifications', image: Ico3D.bell, onTap: () => context.push('/notifications')),
               MenuRow(icon: Icons.support_agent_rounded, label: 'Contacter le support', image: Ico3D.headphone, onTap: () => context.push('/support')),
               if (kIsWeb && !pwaIsStandalone())

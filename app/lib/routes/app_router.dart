@@ -26,6 +26,12 @@ import '../screens/driver/driver_application_screen.dart';
 import '../screens/driver/driver_course_screen.dart';
 import '../screens/driver/driver_earnings_screen.dart';
 import '../screens/driver/driver_home_screen.dart';
+import '../screens/gas/gas_home_screen.dart';
+import '../screens/gas/gas_order_screen.dart';
+import '../screens/gas/gas_orders_screen.dart';
+import '../screens/gas/place_detail_screen.dart';
+import '../screens/vendor/vendor_screens.dart';
+import '../data/models/gas.dart';
 import '../screens/visitor/visitor_screen.dart';
 
 const _publicPaths = {'/welcome', '/login', '/register', '/forgot'};
@@ -94,6 +100,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/client/history', builder: (_, _) => const DeliveryHistoryScreen()),
       GoRoute(path: '/client/wallet', builder: (_, _) => const WalletScreen()),
       GoRoute(path: '/client/delivery/:id', builder: (_, s) => DeliveryTrackingScreen(deliveryId: s.pathParameters['id']!)),
+
+      // Gaz & carburant
+      GoRoute(path: '/client/gas', builder: (_, _) => const GasHomeScreen()),
+      GoRoute(path: '/client/fuel', builder: (_, _) => const GasHomeScreen(stations: true)),
+      GoRoute(path: '/client/gas/orders', builder: (_, _) => const GasOrdersScreen()),
+      GoRoute(path: '/client/gas/orders/:id', builder: (_, s) => GasOrderDetailScreen(orderId: s.pathParameters['id']!)),
+      GoRoute(path: '/client/gas/place/:id', builder: (_, s) => PlaceDetailScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),
+      GoRoute(path: '/client/gas/order/:id', builder: (_, s) => GasOrderScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),
+      GoRoute(path: '/vendor', builder: (_, _) => const VendorHomeScreen()),
+      GoRoute(path: '/vendor/register', builder: (_, _) => const VendorRegisterScreen()),
+      GoRoute(path: '/vendor/place/:id', builder: (_, s) => VendorPlaceScreen(placeId: s.pathParameters['id']!)),
 
       // Professionnels
       GoRoute(path: '/business', builder: (_, _) => const BusinessListScreen()),

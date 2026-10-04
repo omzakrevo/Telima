@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/env.dart';
 
+import '../../core/services/analytics.dart';
 import '../../core/services/cache_service.dart';
 import '../models/delivery.dart';
 import '../models/enums.dart';
@@ -35,6 +36,7 @@ class DeliveryRepository {
         'business_id': businessId,
       }
     });
+    trackEvent('commande_creee', {'service': 'colis'});
     return Delivery(Map<String, dynamic>.from(res as Map));
   }
 
@@ -54,6 +56,7 @@ class DeliveryRepository {
     final res = await _client.rpc('create_errand', params: {
       'p': {'dropoff': dropoff.toJson(), 'items': items, 'category': category, 'budget': budget, 'payment_method': payment.name}
     });
+    trackEvent('commande_creee', {'service': 'course'});
     return Delivery(Map<String, dynamic>.from(res as Map));
   }
 
@@ -64,6 +67,7 @@ class DeliveryRepository {
       'p': {'pickup': pickup.toJson(), 'dropoff': dropoff.toJson(), 'vehicle_type': vehicle.name,
             'passengers': passengers, 'payment_method': payment.name, 'route_km': routeKm}
     });
+    trackEvent('commande_creee', {'service': 'trajet'});
     return Delivery(Map<String, dynamic>.from(res as Map));
   }
 

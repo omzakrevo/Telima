@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/data_providers.dart';
+import '../../widgets/ad_banner.dart';
 import '../../widgets/common.dart';
 import '../../widgets/delivery_widgets.dart';
 import '../../widgets/icon3d.dart';
@@ -208,6 +209,7 @@ class ClientHomeScreen extends ConsumerWidget {
                         ),
                     ]),
             ),
+            const AdBanner(),
           ]),
         ),
       ),

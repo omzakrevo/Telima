@@ -51,6 +51,40 @@
     <p id="telima-msg">Chargement de l'application…</p>
     <button id="telima-retry" type="button" onclick="location.reload()">Recharger</button>
   </div>
+
+  <script>
+    // Google Analytics et AdSense : les identifiants viennent des paramètres de l'application (espace administrateur).
+    (function () {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      var pendingAds = 0, adsReady = false;
+      window.telimaTrack = function (name, params) { try { window.gtag("event", name, params || {}); } catch (e) {} };
+      window.telimaAdPush = function () {
+        if (!adsReady) { pendingAds++; return; }
+        setTimeout(function () { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {} }, 300);
+      };
+      function add(src, attrs) {
+        var s = document.createElement("script"); s.async = true; s.src = src;
+        for (var k in (attrs || {})) s.setAttribute(k, attrs[k]);
+        document.head.appendChild(s);
+      }
+      fetch("__SUPABASE_URL__/rest/v1/app_settings?select=value&key=eq.google", {
+        headers: { apikey: "__SUPABASE_ANON_KEY__", Authorization: "Bearer __SUPABASE_ANON_KEY__", "Accept-Profile": "telima" }
+      }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+        var g = (rows && rows[0] && rows[0].value) || {};
+        if (/^G-[A-Z0-9]{6,}$/.test(g.ga_id || "")) {
+          add("https://www.googletagmanager.com/gtag/js?id=" + g.ga_id);
+          window.gtag("js", new Date());
+          window.gtag("config", g.ga_id);
+        }
+        if (g.ads_enabled && /^ca-pub-\d{10,}$/.test(g.adsense_id || "")) {
+          add("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + g.adsense_id, { crossorigin: "anonymous" });
+          adsReady = true;
+          for (var i = 0; i < pendingAds; i++) window.telimaAdPush();
+        }
+      }).catch(function () {});
+    })();
+  </script>
   <script>
     // Installation comme une application (PWA) : on garde la proposition du navigateur
     // pour l'afficher quand la personne touche « Installer sur ce téléphone ».

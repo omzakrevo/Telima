@@ -511,6 +511,10 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     'errand_service_fee': 'Frais de service des courses à faire (FCFA)',
     'ride_price_multiplier': 'Multiplicateur du tarif des trajets (1 = tarif colis)',
   };
+  final _gaId = TextEditingController();
+  final _adsenseId = TextEditingController();
+  final _adSlot = TextEditingController();
+  bool _adsEnabled = false;
   final _supportPhone = TextEditingController();
   final _supportWhatsapp = TextEditingController();
   final _supportEmail = TextEditingController();
@@ -533,6 +537,11 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     for (final e in _num.entries) {
       e.value.text = '${s.values[e.key] ?? ''}';
     }
+    final g = s.google;
+    _gaId.text = g.gaId;
+    _adsenseId.text = g.adsenseId;
+    _adSlot.text = g.adSlot;
+    _adsEnabled = g.adsEnabled;
     _supportPhone.text = s.supportPhone;
     _supportWhatsapp.text = s.supportWhatsapp;
     _supportEmail.text = s.supportEmail;
@@ -556,6 +565,12 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
       for (final e in _num.entries) {
         await repo.updateSetting(e.key, num.parse(e.value.text.replaceAll(',', '.')));
       }
+      await repo.updateSetting('google', {
+        'ga_id': _gaId.text.trim(),
+        'adsense_id': _adsenseId.text.trim(),
+        'ad_slot': _adSlot.text.trim(),
+        'ads_enabled': _adsEnabled,
+      });
       await repo.updateSetting('support', {
         'phone': normalizePhone(_supportPhone.text),
         'whatsapp': normalizePhone(_supportWhatsapp.text),
@@ -691,6 +706,43 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                           validator: (v) => Validators.number(v),
                         ),
                       ],
+                    ]),
+                  ),
+                ),
+                const SectionTitle('Google Analytics et publicités'),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text(
+                        'Analytics compte les visites et les clients sur le site web. AdSense affiche des publicités sur le site web. '
+                        'Les modifications s’appliquent dès la prochaine ouverture du site.',
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.4),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _gaId,
+                        decoration: const InputDecoration(labelText: 'Mesure Google Analytics (G-XXXXXXXXXX)'),
+                        validator: (v) => (v == null || v.trim().isEmpty || RegExp(r'^G-[A-Z0-9]{6,}$').hasMatch(v.trim())) ? null : 'Format attendu : G-XXXXXXXXXX',
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _adsenseId,
+                        decoration: const InputDecoration(labelText: 'Éditeur AdSense (ca-pub-XXXXXXXXXXXXXXXX)'),
+                        validator: (v) => (v == null || v.trim().isEmpty || RegExp(r'^ca-pub-\d{10,}$').hasMatch(v.trim())) ? null : 'Format attendu : ca-pub- suivi de chiffres',
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _adSlot,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Identifiant du bloc publicitaire (chiffres, facultatif)'),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Afficher les publicités'),
+                        value: _adsEnabled,
+                        onChanged: (v) => setState(() => _adsEnabled = v),
+                      ),
                     ]),
                   ),
                 ),

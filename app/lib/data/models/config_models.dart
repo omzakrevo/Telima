@@ -49,6 +49,18 @@ class AppSettings {
   AppSettings(this.values);
   final Map<String, dynamic> values;
 
+  /// Identifiants Google Analytics / AdSense saisis par l'administrateur.
+  ({String gaId, String adsenseId, String adSlot, bool adsEnabled}) get google {
+    final g = values['google'];
+    final m = g is Map ? g : const {};
+    return (
+      gaId: '${m['ga_id'] ?? ''}',
+      adsenseId: '${m['adsense_id'] ?? ''}',
+      adSlot: '${m['ad_slot'] ?? ''}',
+      adsEnabled: m['ads_enabled'] == true && '${m['adsense_id'] ?? ''}'.isNotEmpty,
+    );
+  }
+
   T? get<T>(String key) => values[key] is T ? values[key] as T : null;
 
   Map get commission => (values['commission'] as Map?) ?? {'type': 'percent', 'value': 15};

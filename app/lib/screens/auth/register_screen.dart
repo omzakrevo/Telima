@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/analytics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -49,6 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             cityId: _cityId,
             asDriver: _asDriver,
           );
+      trackEvent('sign_up', {'method': _asDriver ? 'livreur' : 'client'});
       if (_photo != null) {
         try {
           final storage = ref.read(storageServiceProvider);

@@ -187,4 +187,4 @@ SUPABASE_URL=... SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=... node e2e_ap
 (à conserver hors ligne : sans elle, plus aucune mise à jour ne s'installe par-dessus l'application),
 le fichier `app/env.cloud.json` (copier `app/env.example.json`), les mots de passe et clés API.
 
-Version actuelle : **1.5.0 (2006)** — site web : https://telima-bf.netlify.app
+Version actuelle : **1.5.0 (2006)** — site web : https://telima-bf-3q2h.netlify.app

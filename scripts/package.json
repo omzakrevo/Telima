@@ -1,0 +1,12 @@
+{
+  "name": "telima-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "node seed_accounts.mjs",
+    "e2e": "node e2e_api_test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  }
+}

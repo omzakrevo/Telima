@@ -1,0 +1,1 @@
+-- Données de démonstration facultatives (la configuration est dans les migrations)

@@ -1,0 +1,17 @@
+scripts/node_modules/
+supabase/.temp/
+supabase/.branches/
+.DS_Store
+
+# Secrets et fichiers générés — ne jamais publier
+*.jks
+*.keystore
+key.properties
+app/env.cloud.json
+app/build/
+app/.dart_tool/
+**/build/
+*.apk
+*.aab
+.env
+.env.*

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <base href="/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Telima — livraison de colis au Burkina Faso">
+  <meta name="theme-color" content="#F6FAF7">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Telima">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="manifest" href="manifest.json">
+  <title>Telima</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #F6FAF7; }
+    #telima-splash {
+      position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; background: #F6FAF7; color: #1C2420; font-family: Roboto, Arial, sans-serif; text-align: center; padding: 16px;
+      transition: opacity .3s ease; z-index: 10;
+    }
+        #telima-splash p { margin: 0; font-size: 14px; color: #7A8580; max-width: 320px; line-height: 1.4; }
+    .telima-logo { width: 84px; height: 84px; }
+    .telima-logo .bg { transform-origin: 50px 50px; animation: tl-pop 2.4s ease-in-out infinite; }
+    .telima-logo .ln { stroke-dasharray: 100; stroke-dashoffset: 100; animation: tl-draw 2.4s ease-in-out infinite; }
+    .telima-logo .ln2 { animation-delay: .15s; }
+    .telima-logo .ln3 { animation-delay: .3s; }
+    .telima-logo .dot { transform-origin: 78px 74px; animation: tl-dot 2.4s ease-in-out infinite; }
+    @keyframes tl-pop { 0% { transform: scale(.85); } 15%, 85% { transform: scale(1); } 100% { transform: scale(.85); } }
+    @keyframes tl-draw { 0% { stroke-dashoffset: 100; } 40%, 80% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 100; } }
+    @keyframes tl-dot { 0%, 35% { transform: scale(0); } 50% { transform: scale(1.3); } 60%, 85% { transform: scale(1); } 100% { transform: scale(0); } }
+    .telima-word { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+    .telima-bar { width: 180px; height: 4px; border-radius: 4px; background: #E1EBE4; overflow: hidden; }
+    .telima-bar i { display: block; height: 100%; width: 0; background: #3D8B5F; border-radius: 4px; transition: width .3s ease; }
+    @media (prefers-reduced-motion: reduce) { .telima-logo * { animation: none !important; stroke-dashoffset: 0 !important; transform: none !important; } }
+    #telima-retry { display: none; margin-top: 6px; background: #1C2420; color: #fff; border: 0; border-radius: 999px; padding: 12px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="telima-splash" role="status" aria-live="polite">
+    <svg class="telima-logo" viewBox="0 0 100 100" aria-hidden="true">
+      <rect class="bg" width="100" height="100" rx="28" fill="#3D8B5F"/>
+      <path class="ln ln2" pathLength="100" d="M24 34 H66" stroke="#fff" stroke-width="11" stroke-linecap="round" fill="none"/>
+      <path class="ln ln3" pathLength="100" d="M58 23 L71 34 L58 45" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path class="ln" pathLength="100" d="M42 34 V60 Q42 74 56 74 H62" stroke="#fff" stroke-width="11" stroke-linecap="round" fill="none"/>
+      <circle class="dot" cx="78" cy="74" r="7.5" fill="#F08A3C"/>
+    </svg>
+    <h1 class="telima-word">telima</h1>
+    <div class="telima-bar" aria-hidden="true"><i id="telima-bar"></i></div>
+    <p id="telima-msg">Chargement de l'application…</p>
+    <button id="telima-retry" type="button" onclick="location.reload()">Recharger</button>
+  </div>
+  <script>
+    (function () {
+      var splash = document.getElementById("telima-splash");
+      var msg = document.getElementById("telima-msg");
+      var retry = document.getElementById("telima-retry");
+      var done = false;
+      function say(t) { if (!done) msg.textContent = t; }
+      function fail(t) { say(t); retry.style.display = "inline-block"; }
+
+      var hasWasm = typeof WebAssembly === "object";
+      var hasGl = false;
+      try { var cv = document.createElement("canvas"); hasGl = !!(cv.getContext("webgl2") || cv.getContext("webgl")); } catch (e) {}
+      if (!hasWasm || !hasGl) {
+        fail("Ce navigateur est trop ancien ou limité pour Telima (" + (!hasWasm ? "WebAssembly" : "WebGL") +
+             " indisponible). Ouvrez le site dans Google Chrome, Edge ou Firefox à jour.");
+        return;
+      }
+      window.addEventListener("flutter-first-frame", function () {
+        done = true;
+        splash.style.opacity = "0";
+        setTimeout(function () { splash.remove(); }, 350);
+      });
+      window.addEventListener("error", function (e) {
+        if (!done && e && e.filename && /main\.dart\.js|flutter|canvaskit/.test(e.filename)) {
+          fail("Une erreur a empêché le démarrage (" + (e.message || "inconnue") + "). Rechargez la page.");
+        }
+      });
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); });
+      }
+
+      // Téléchargement préalable des gros fichiers avec progression et reprise automatique,
+      // puis démarrage de Flutter (qui les retrouve dans le cache du navigateur).
+      var chromium = typeof window.ImageDecoder !== "undefined" && typeof Intl.v8BreakIterator !== "undefined";
+      var ck = chromium ? "canvaskit/chromium/" : "canvaskit/";
+      var files = ["main.dart.js", ck + "canvaskit.js", ck + "canvaskit.wasm"];
+      var loaded = {}, totals = {};
+      function mo(n) { return (n / 1048576).toFixed(1).replace(".", ","); }
+      function progress() {
+        var l = 0, t = 0, known = true;
+        files.forEach(function (f) { l += loaded[f] || 0; if (totals[f]) t += totals[f]; else known = false; });
+        say("Chargement de l'application… " + mo(l) + (known && t ? " / " + mo(t) : "") + " Mo");
+        var bar = document.getElementById("telima-bar");
+        if (bar) bar.style.width = (known && t ? Math.min(100, Math.round(l / t * 100)) : Math.min(90, Math.round(l / 3500000 * 100))) + "%";
+      }
+      function get(f, attempt) {
+        return fetch(f).then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          var len = +res.headers.get("Content-Length") || 0;
+          if (len && !res.headers.get("Content-Encoding")) totals[f] = len;
+          if (!res.body || !res.body.getReader) return res.arrayBuffer().then(function (b) { loaded[f] = b.byteLength; progress(); });
+          var reader = res.body.getReader(), n = 0;
+          function pump() {
+            return reader.read().then(function (r) {
+              if (r.done) { totals[f] = totals[f] || n; progress(); return; }
+              n += r.value.length; loaded[f] = n; progress(); return pump();
+            });
+          }
+          return pump();
+        }).catch(function (err) {
+          if (attempt >= 4) throw err;
+          say("Connexion interrompue, nouvel essai (" + (attempt + 1) + "/4)…");
+          loaded[f] = 0;
+          return new Promise(function (ok) { setTimeout(ok, 1500 * (attempt + 1)); }).then(function () { return get(f, attempt + 1); });
+        });
+      }
+      function start() {
+        say("Démarrage…");
+        var bar = document.getElementById("telima-bar"); if (bar) bar.style.width = "100%";
+        var s = document.createElement("script"); s.src = "flutter_bootstrap.js"; s.async = true;
+        s.onerror = function () { fail("Le démarrage n'a pas pu être chargé. Vérifiez votre connexion puis rechargez la page."); };
+        document.body.appendChild(s);
+        setTimeout(function () { if (!done) fail("Le démarrage prend trop de temps. Rechargez la page."); }, 60000);
+      }
+      if (!window.fetch) { start(); return; }
+      Promise.all(files.map(function (f) { return get(f, 0); })).then(start, function (err) {
+        fail("Le téléchargement de l'application a échoué (" + err.message + "). Vérifiez votre connexion Internet puis rechargez la page.");
+      });
+    })();
+  </script>
+</body>
+</html>

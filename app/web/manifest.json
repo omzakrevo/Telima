@@ -1,0 +1,35 @@
+{
+  "name": "Telima — Livraison de colis",
+  "short_name": "Telima",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F6FAF7",
+  "theme_color": "#3D8B5F",
+  "description": "Livraison de colis au Burkina Faso",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/Icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/Icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

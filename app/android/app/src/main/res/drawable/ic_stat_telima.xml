@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône de notification (barre d'état) : le « t » fléché du logo Telima, monochrome -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="100" android:viewportHeight="100">
+    <path android:pathData="M18,30 H70" android:strokeColor="#FFFFFFFF" android:strokeWidth="13" android:strokeLineCap="round"/>
+    <path android:pathData="M60,17 L75,30 L60,43" android:strokeColor="#FFFFFFFF" android:strokeWidth="13" android:strokeLineCap="round" android:strokeLineJoin="round"/>
+    <path android:pathData="M40,30 V62 Q40,80 58,80 H64" android:strokeColor="#FFFFFFFF" android:strokeWidth="13" android:strokeLineCap="round"/>
+    <path android:pathData="M84,80 m-9,0 a9,9 0 1,0 18,0 a9,9 0 1,0 -18,0" android:fillColor="#FFFFFFFF"/>
+</vector>

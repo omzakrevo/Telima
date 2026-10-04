@@ -77,3 +77,13 @@ final myPlacesProvider = FutureProvider<List<Place>>((ref) => ref.watch(gasRepos
 final placeOrdersProvider = FutureProvider.family<List<GasOrder>, String>((ref, id) => ref.watch(gasRepositoryProvider).placeOrders(id));
 final vendorDashboardProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, id) => ref.watch(gasRepositoryProvider).dashboard(id));
 final placeProvider = FutureProvider.family<Place?, String>((ref, id) => ref.watch(gasRepositoryProvider).placeById(id));
+
+final placeReviewsProvider = FutureProvider.autoDispose.family<List<PlaceReview>, String>((ref, id) => ref.watch(gasRepositoryProvider).reviews(id));
+final favoritePlacesProvider = FutureProvider.autoDispose<List<Place>>((ref) async {
+  final pos = await ref.watch(myPositionProvider.future);
+  return ref.watch(gasRepositoryProvider).favorites(pos.latitude, pos.longitude);
+});
+final placePromosProvider = FutureProvider.autoDispose.family<List<PlacePromo>, String>((ref, id) => ref.watch(gasRepositoryProvider).promotions(id));
+final vendorPlansProvider = FutureProvider.autoDispose<List<VendorPlan>>((ref) => ref.watch(gasRepositoryProvider).plans());
+final placeSubscriptionsProvider =
+    FutureProvider.autoDispose.family<List<VendorSubscription>, String>((ref, id) => ref.watch(gasRepositoryProvider).subscriptions(id));

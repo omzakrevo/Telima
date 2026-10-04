@@ -26,6 +26,7 @@ import '../screens/driver/driver_application_screen.dart';
 import '../screens/driver/driver_course_screen.dart';
 import '../screens/driver/driver_earnings_screen.dart';
 import '../screens/driver/driver_home_screen.dart';
+import '../screens/gas/favorites_screen.dart';
 import '../screens/gas/gas_home_screen.dart';
 import '../screens/gas/gas_order_screen.dart';
 import '../screens/gas/gas_orders_screen.dart';
@@ -104,6 +105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Gaz & carburant
       GoRoute(path: '/client/gas', builder: (_, _) => const GasHomeScreen()),
       GoRoute(path: '/client/fuel', builder: (_, _) => const GasHomeScreen(stations: true)),
+      GoRoute(path: '/client/gas/favorites', builder: (_, _) => const FavoritePlacesScreen()),
       GoRoute(path: '/client/gas/orders', builder: (_, _) => const GasOrdersScreen()),
       GoRoute(path: '/client/gas/orders/:id', builder: (_, s) => GasOrderDetailScreen(orderId: s.pathParameters['id']!)),
       GoRoute(path: '/client/gas/place/:id', builder: (_, s) => PlaceDetailScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),

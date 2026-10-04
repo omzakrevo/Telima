@@ -13,6 +13,7 @@ import '../../providers/gas_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/point_form.dart';
 import '../gas/gas_widgets.dart';
+import 'vendor_extras.dart';
 
 /// Espace vendeur : mes points de vente de gaz / stations.
 class VendorHomeScreen extends ConsumerWidget {
@@ -206,20 +207,24 @@ class VendorPlaceScreen extends ConsumerWidget {
     final place = ref.watch(myPlacesProvider).value?.where((p) => p.id == placeId).firstOrNull;
     if (place == null) return Scaffold(appBar: AppBar(title: const Text('Mon point')), body: const LoadingView());
     return DefaultTabController(
-      length: 3,
+      length: place.isStation ? 4 : 5,
       child: Scaffold(
         appBar: AppBar(
           title: Text(place.name),
-          bottom: TabBar(tabs: [
+          bottom: TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
             const Tab(text: 'Résumé'),
             const Tab(text: 'Commandes'),
             Tab(text: place.isStation ? 'Carburants' : 'Produits'),
+            if (!place.isStation) const Tab(text: 'Promotions'),
+            const Tab(text: 'Abonnement'),
           ]),
         ),
         body: TabBarView(children: [
           _Summary(place: place),
           _Orders(place: place),
           place.isStation ? _Fuels(place: place) : _Products(place: place),
+          if (!place.isStation) VendorPromos(place: place),
+          VendorSubscriptionTab(place: place),
         ]),
       ),
     );

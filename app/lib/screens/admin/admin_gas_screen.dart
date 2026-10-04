@@ -9,6 +9,7 @@ import '../../providers/gas_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/point_form.dart';
 import '../gas/gas_widgets.dart';
+import 'admin_gas_extras.dart';
 
 final _adminPlacesProvider = FutureProvider<List<Place>>((ref) => ref.watch(gasRepositoryProvider).adminPlaces());
 final _adminReportsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) => ref.watch(gasRepositoryProvider).adminReports());
@@ -20,15 +21,17 @@ class AdminGasScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return const DefaultTabController(
-      length: 4,
+      length: 6,
       child: Column(children: [
         TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [
           Tab(text: 'À valider'),
           Tab(text: 'Tous les points'),
           Tab(text: 'Marques'),
           Tab(text: 'Signalements'),
+          Tab(text: 'Abonnements'),
+          Tab(text: 'Avis'),
         ]),
-        Expanded(child: TabBarView(children: [_PlacesTab(onlyPending: true), _PlacesTab(onlyPending: false), _BrandsTab(), _ReportsTab()])),
+        Expanded(child: TabBarView(children: [_PlacesTab(onlyPending: true), _PlacesTab(onlyPending: false), _BrandsTab(), _ReportsTab(), AdminSubscriptionsTab(), AdminReviewsTab()])),
       ]),
     );
   }

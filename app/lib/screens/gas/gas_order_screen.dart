@@ -65,7 +65,7 @@ class _GasOrderScreenState extends ConsumerState<GasOrderScreen> {
     }
   }
 
-  int _items(Place place) => place.products.fold(0, (s, p) => s + p.price * (_qty[p.id] ?? 0));
+  int _items(Place place) => place.products.fold(0, (s, p) => s + p.finalPrice * (_qty[p.id] ?? 0));
 
   Future<void> _submit(Place place) async {
     final items = {for (final e in _qty.entries) if (e.value > 0) e.key: e.value};
@@ -140,7 +140,7 @@ class _GasOrderScreenState extends ConsumerState<GasOrderScreen> {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('${p.brand} · ${p.sizeLabel}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                    Text(fcfa(p.price), style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
+                    Text(p.onPromo ? '${fcfa(p.finalPrice)} (au lieu de ${fcfa(p.price)})' : fcfa(p.finalPrice), style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
                     AvailabilityChip(p.availability, at: p.confirmedAt),
                   ]),

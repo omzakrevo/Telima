@@ -53,8 +53,104 @@ class GasRepository {
 
   Future<Place?> placeById(String id) async {
     final row = await _client.from('places').select('*, products:place_products(*, gas_brands(name)), fuels:place_fuels(*)').eq('id', id).maybeSingle();
-    return row == null ? null : Place(Map<String, dynamic>.from(row));
+    if (row == null) return null;
+    final place = Place(Map<String, dynamic>.from(row));
+    if (!place.isStation) await _applyPromos(place);
+    return place;
   }
+
+  /// Applique les promotions en cours aux produits (le serveur recalcule le prix à la commande).
+  Future<void> _applyPromos(Place place) async {
+    final promos = (await promotions(place.id)).where((p) => p.running).toList();
+    for (final pr in place.products) {
+      PlacePromo? best;
+      for (final promo in promos.where((p) => p.productId == null || p.productId == pr.id)) {
+        if (best == null || promo.priceFor(pr.price) < best.priceFor(pr.price)) best = promo;
+      }
+      if (best != null) {
+        pr.promoPrice = best.priceFor(pr.price);
+        pr.promoTitle = best.title;
+      }
+    }
+    place.promoTitle = promos.isEmpty ? null : promos.first.title;
+  }
+
+  // ----- Avis -----
+
+  Future<List<PlaceReview>> reviews(String placeId) async {
+    final rows = await _client.rpc('place_reviews_list', params: {'p_place_id': placeId, 'p_limit': 40});
+    return [for (final r in (rows as List)) PlaceReview(Map<String, dynamic>.from(r as Map))];
+  }
+
+  Future<void> reviewPlace(String placeId, int rating, String? comment) =>
+      _client.rpc('review_place', params: {'p_place_id': placeId, 'p_rating': rating, 'p_comment': comment});
+
+  Future<void> deleteMyReview(String placeId) => _client.rpc('delete_my_review', params: {'p_place_id': placeId});
+
+  Future<List<Json>> adminReviews() async {
+    final rows = await _client.from('place_reviews').select('*, places(name), users(full_name)').order('created_at', ascending: false).limit(100);
+    return [for (final r in rows) Map<String, dynamic>.from(r)];
+  }
+
+  Future<void> adminDeleteReview(String id) => _client.from('place_reviews').delete().eq('id', id);
+
+  // ----- Favoris -----
+
+  Future<List<Place>> favorites(double lat, double lng) async =>
+      _places(await _client.rpc('favorite_places', params: {'p_lat': lat, 'p_lng': lng}));
+
+  // ----- Promotions -----
+
+  Future<List<PlacePromo>> promotions(String placeId) async {
+    final rows = await _client.from('place_promotions').select().eq('place_id', placeId).order('ends_at', ascending: false);
+    return [for (final r in rows) PlacePromo(r)];
+  }
+
+  Future<void> savePromo({String? id, required String placeId, String? productId, required String title, required bool percent,
+      required int value, required DateTime endsAt, bool active = true}) async {
+    final row = {
+      'place_id': placeId,
+      'product_id': productId,
+      'title': title,
+      'discount_type': percent ? 'percent' : 'amount',
+      'discount_value': value,
+      'ends_at': endsAt.toUtc().toIso8601String(),
+      'is_active': active,
+    };
+    if (id == null) {
+      await _client.from('place_promotions').insert(row);
+    } else {
+      await _client.from('place_promotions').update(row).eq('id', id);
+    }
+  }
+
+  Future<void> deletePromo(String id) => _client.from('place_promotions').delete().eq('id', id);
+
+  // ----- Abonnements vendeur -----
+
+  Future<List<VendorPlan>> plans() async {
+    final rows = await _client.from('vendor_plans').select().eq('is_active', true).order('sort_order');
+    return [for (final r in rows) VendorPlan(r)];
+  }
+
+  Future<List<VendorSubscription>> subscriptions(String placeId) async {
+    final rows = await _client.from('vendor_subscriptions').select().eq('place_id', placeId).order('created_at', ascending: false).limit(20);
+    return [for (final r in rows) VendorSubscription(r)];
+  }
+
+  Future<void> requestSubscription(String placeId, String plan, int months, String paymentRef) => _client.rpc('vendor_request_subscription',
+      params: {'p_place_id': placeId, 'p_plan': plan, 'p_months': months, 'p_payment_ref': paymentRef});
+
+  Future<List<VendorSubscription>> adminSubscriptions() async {
+    final rows = await _client.from('vendor_subscriptions').select('*, places(name)').order('created_at', ascending: false).limit(100);
+    return [for (final r in rows) VendorSubscription(r)];
+  }
+
+  Future<void> adminDecideSubscription(String id, bool approve) =>
+      _client.rpc('admin_decide_subscription', params: {'p_id': id, 'p_approve': approve});
+
+  Future<void> adminSavePlan(String code, {required int price, required int? maxProducts, required int? maxPromotions}) =>
+      _client.from('vendor_plans').update({'price_monthly': price, 'max_products': maxProducts, 'max_promotions': maxPromotions}).eq('code', code);
 
   Future<List<GasBrand>> brands() async {
     final rows = await _client.from('gas_brands').select().eq('is_active', true).order('name');

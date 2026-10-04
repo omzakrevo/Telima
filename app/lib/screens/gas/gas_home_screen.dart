@@ -96,6 +96,11 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
         title: Text(stations ? 'Stations-service' : 'Trouver du gaz'),
         actions: [
           IconButton(
+            tooltip: 'Mes favoris',
+            onPressed: () => context.push('/client/gas/favorites'),
+            icon: const Icon(Icons.favorite_rounded),
+          ),
+          IconButton(
             tooltip: 'Mes commandes de gaz',
             onPressed: () => context.push('/client/gas/orders'),
             icon: const Icon(Icons.receipt_long_rounded),
@@ -207,13 +212,19 @@ class PlaceCard extends StatelessWidget {
                 const Text('de vous', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
               ]),
           ]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            RatingBadge(avg: p.ratingAvg, count: p.ratingCount),
+            if (p.promoTitle != null) SmallTag(p.promoTitle!, AppColors.danger, icon: Icons.local_offer_rounded),
+            if (p.boost >= 2) const SmallTag('Sponsorisé', AppColors.info) else if (p.boost == 1) const SmallTag('Recommandé', AppColors.primaryDark, icon: Icons.verified_rounded),
+          ]),
+          const SizedBox(height: 8),
           Wrap(spacing: 6, runSpacing: 6, children: [
             if (p.isStation)
               for (final f in p.fuels) AvailabilityChip(f.availability, at: f.confirmedAt, label: '${f.label} · ${f.shown.label}')
             else
               for (final pr in p.products.take(4))
-                AvailabilityChip(pr.availability, at: pr.confirmedAt, label: '${pr.sizeLabel} · ${fcfa(pr.price)}'),
+                AvailabilityChip(pr.availability, at: pr.confirmedAt, label: '${pr.sizeLabel} · ${fcfa(pr.finalPrice)}${pr.onPromo ? ' 🏷' : ''}'),
             if (p.isStation && p.fuels.isEmpty) const AvailabilityChip(Availability.unknown),
             if (!p.isStation && p.products.isEmpty) const AvailabilityChip(Availability.unknown),
             if (p.delivers)

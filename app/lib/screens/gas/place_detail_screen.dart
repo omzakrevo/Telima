@@ -113,6 +113,12 @@ class _Body extends ConsumerWidget {
               },
             ),
           ]),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            RatingBadge(avg: place.ratingAvg, count: place.ratingCount, size: 15),
+            if (place.promoTitle != null) SmallTag('Promotion : ${place.promoTitle}', AppColors.danger, icon: Icons.local_offer_rounded),
+            if (place.isOsm) const SmallTag('Données OpenStreetMap', AppColors.textMuted),
+          ]),
           const SizedBox(height: 12),
           if (place.address != null && place.address!.isNotEmpty) _Info(Icons.place_rounded, place.address!),
           if (place.hours != null && place.hours!.isNotEmpty) _Info(Icons.schedule_rounded, place.hours!),
@@ -155,7 +161,7 @@ class _Body extends ConsumerWidget {
             for (final p in place.products)
               _Row(
                 title: '${p.brand} · ${p.sizeLabel}',
-                price: fcfa(p.price),
+                price: p.onPromo ? '${fcfa(p.finalPrice)}  (avant ${fcfa(p.price)} · ${p.promoTitle ?? 'promotion'})' : fcfa(p.price),
                 chip: AvailabilityChip(p.availability, at: p.confirmedAt, showAge: true),
                 onReport: () => _availabilitySheet(context, ref, '${p.brand} ${p.sizeLabel} : où en est-on ?', 'gas', productId: p.id),
               ),
@@ -186,6 +192,7 @@ class _Body extends ConsumerWidget {
               ),
             ]),
           ),
+          _Reviews(place: place),
           if (!place.isStation) ...[
             const SizedBox(height: 18),
             BigActionButton(
@@ -258,4 +265,85 @@ class _Row extends StatelessWidget {
           TextButton(onPressed: onReport, child: const Text('Signaler')),
         ]),
       );
+}
+
+/// Avis des clients + formulaire « Donner mon avis ».
+class _Reviews extends ConsumerWidget {
+  const _Reviews({required this.place});
+  final Place place;
+
+  Future<void> _write(BuildContext context, WidgetRef ref, PlaceReview? mine) async {
+    if (!ref.read(authControllerProvider).isSignedIn) {
+      showError(context, Exception('Connectez-vous pour donner votre avis'));
+      return;
+    }
+    var rating = mine?.rating ?? 5;
+    final c = TextEditingController(text: mine?.comment ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setS) => AlertDialog(
+          title: const Text('Votre avis'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              for (var i = 1; i <= 5; i++)
+                IconButton(
+                  onPressed: () => setS(() => rating = i),
+                  icon: Icon(i <= rating ? Icons.star_rounded : Icons.star_border_rounded, color: AppColors.accent, size: 34),
+                ),
+            ]),
+            TextField(controller: c, maxLength: 500, maxLines: 3, decoration: const InputDecoration(labelText: 'Commentaire (facultatif)')),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Publier')),
+          ],
+        ),
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    try {
+      await ref.read(gasRepositoryProvider).reviewPlace(place.id, rating, c.text);
+      ref.invalidate(placeReviewsProvider(place.id));
+      ref.invalidate(placeProvider(place.id));
+      if (context.mounted) showSuccess(context, 'Merci pour votre avis !');
+    } catch (e) {
+      if (context.mounted) showError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviews = ref.watch(placeReviewsProvider(place.id)).value ?? const <PlaceReview>[];
+    final mine = reviews.where((r) => r.mine).firstOrNull;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SectionTitle('Avis des clients'),
+      Row(children: [
+        RatingBadge(avg: place.ratingAvg, count: place.ratingCount, size: 16),
+        const Spacer(),
+        OutlinedButton.icon(
+          onPressed: () => _write(context, ref, mine),
+          icon: const Icon(Icons.rate_review_outlined, size: 18),
+          label: Text(mine == null ? 'Donner mon avis' : 'Modifier mon avis'),
+        ),
+      ]),
+      const SizedBox(height: 8),
+      for (final r in reviews.take(10))
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.line)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              for (var i = 1; i <= 5; i++) Icon(i <= r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 16, color: AppColors.accent),
+              const SizedBox(width: 8),
+              Expanded(child: Text(r.mine ? 'Vous' : r.author, style: const TextStyle(fontWeight: FontWeight.w700))),
+              if (r.verified) const SmallTag('Achat vérifié', AppColors.primaryDark, icon: Icons.verified_rounded),
+            ]),
+            if (r.comment != null && r.comment!.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(r.comment!)),
+          ]),
+        ),
+      if (reviews.isEmpty) const Text('Soyez le premier à donner votre avis.', style: TextStyle(color: AppColors.textMuted)),
+    ]);
+  }
 }

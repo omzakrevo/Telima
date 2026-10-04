@@ -10,6 +10,7 @@ import '../../data/models/enums.dart';
 import '../../providers/core_providers.dart';
 import '../../widgets/common.dart';
 import '../client/location_picker_screen.dart';
+import 'admin_sms_card.dart';
 
 final _pricingProvider = FutureProvider.autoDispose<List<PricingRule>>((ref) => ref.watch(configRepositoryProvider).pricingRules());
 final _allCitiesProvider = FutureProvider.autoDispose<List<City>>((ref) => ref.watch(configRepositoryProvider).cities(includeInactive: true));
@@ -709,6 +710,8 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                     ]),
                   ),
                 ),
+                const SectionTitle('Passerelle SMS (SMSBus)'),
+                const SmsGatewayCard(),
                 const SectionTitle('Google Analytics et publicités'),
                 Card(
                   child: Padding(

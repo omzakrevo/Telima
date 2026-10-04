@@ -61,7 +61,9 @@ class PlaceProduct {
         availability = Availability.parse(j['availability']),
         confirmedAt = asDate(j['confirmed_at']),
         trackStock = asBool(j['track_stock']),
-        stock = asInt(j['stock_available']);
+        stock = asInt(j['stock_available']),
+        promoPrice = j['promo_price'] == null ? null : asInt(j['promo_price']),
+        promoTitle = asStr(j['promo_title']);
   final String id;
   final String? brandId;
   final String brand;
@@ -71,6 +73,12 @@ class PlaceProduct {
   final DateTime? confirmedAt;
   final bool trackStock;
   final int stock;
+  int? promoPrice;
+  String? promoTitle;
+
+  /// Prix réellement payé (promotion comprise).
+  int get finalPrice => promoPrice != null && promoPrice! < price ? promoPrice! : price;
+  bool get onPromo => finalPrice < price;
 
   String get sizeLabel => '${sizeKg == sizeKg.roundToDouble() ? sizeKg.toInt() : sizeKg.toString().replaceAll('.', ',')} kg';
   Availability get shown => effectiveAvailability(availability, confirmedAt);
@@ -109,6 +117,11 @@ class Place {
         distanceKm = asDouble(j['distance_km']),
         status = asStr(j['status']) ?? 'approved',
         ownerId = asStr(j['owner_id']),
+        ratingAvg = asDouble(j['rating_avg']),
+        ratingCount = asInt(j['rating_count']),
+        boost = asInt(j['boost']),
+        promoTitle = asStr(j['promo_title']),
+        isOsm = j['source'] == 'osm',
         products = [for (final p in (j['products'] as List? ?? const [])) PlaceProduct(Map<String, dynamic>.from(p as Map))],
         fuels = [for (final f in (j['fuels'] as List? ?? const [])) PlaceFuel(Map<String, dynamic>.from(f as Map))];
 
@@ -128,6 +141,11 @@ class Place {
   final double? distanceKm;
   final String status;
   final String? ownerId;
+  final double? ratingAvg;
+  final int ratingCount;
+  final int boost;
+  String? promoTitle;
+  final bool isOsm;
   final List<PlaceProduct> products;
   final List<PlaceFuel> fuels;
 
@@ -147,7 +165,8 @@ class Place {
 
 class GasOrderItem {
   GasOrderItem(Json j)
-      : label = '${j['label']}',
+      : originalPrice = j['original_price'] == null ? null : asInt(j['original_price']),
+        label = '${j['label']}',
         sizeKg = asDouble(j['size_kg']) ?? 0,
         qty = asInt(j['qty']),
         unitPrice = asInt(j['unit_price']);
@@ -155,6 +174,7 @@ class GasOrderItem {
   final double sizeKg;
   final int qty;
   final int unitPrice;
+  final int? originalPrice;
   String get text => '$qty × $label ${sizeKg == sizeKg.roundToDouble() ? sizeKg.toInt() : sizeKg.toString().replaceAll('.', ',')} kg';
 }
 
@@ -233,4 +253,97 @@ class GasOrder {
         if (isDelivery) ('out_for_delivery', 'Livreur en route'),
         ('delivered', isDelivery ? 'Livrée' : 'Retirée'),
       ];
+}
+
+/// Promotion d'un point de vente.
+class PlacePromo {
+  PlacePromo(Json j)
+      : id = '${j['id']}',
+        placeId = '${j['place_id']}',
+        productId = asStr(j['product_id']),
+        title = '${j['title']}',
+        percent = j['discount_type'] == 'percent',
+        value = asInt(j['discount_value']),
+        startsAt = asDate(j['starts_at']),
+        endsAt = asDate(j['ends_at']),
+        isActive = asBool(j['is_active']);
+  final String id;
+  final String placeId;
+  final String? productId;
+  final String title;
+  final bool percent;
+  final int value;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final bool isActive;
+
+  bool get running {
+    final now = DateTime.now();
+    return isActive && (startsAt == null || !startsAt!.isAfter(now)) && (endsAt == null || endsAt!.isAfter(now));
+  }
+
+  String get label => percent ? '-$value %' : '-$value FCFA';
+  int priceFor(int price) => (percent ? (price * (100 - value) / 100).round() : price - value).clamp(0, price);
+}
+
+class PlaceReview {
+  PlaceReview(Json j)
+      : id = '${j['id']}',
+        rating = asInt(j['rating']),
+        comment = asStr(j['comment']),
+        verified = asBool(j['verified']),
+        author = asStr(j['author']) ?? 'Client',
+        mine = asBool(j['mine']),
+        createdAt = asDate(j['created_at']);
+  final String id;
+  final int rating;
+  final String? comment;
+  final bool verified;
+  final String author;
+  final bool mine;
+  final DateTime? createdAt;
+}
+
+class VendorPlan {
+  VendorPlan(Json j)
+      : code = '${j['code']}',
+        name = '${j['name']}',
+        priceMonthly = asInt(j['price_monthly']),
+        maxProducts = j['max_products'] == null ? null : asInt(j['max_products']),
+        maxPromotions = j['max_promotions'] == null ? null : asInt(j['max_promotions']),
+        boost = asInt(j['boost']),
+        features = [for (final f in (j['features'] as List? ?? const [])) '$f'];
+  final String code;
+  final String name;
+  final int priceMonthly;
+  final int? maxProducts;
+  final int? maxPromotions;
+  final int boost;
+  final List<String> features;
+}
+
+class VendorSubscription {
+  VendorSubscription(Json j)
+      : id = '${j['id']}',
+        placeId = '${j['place_id']}',
+        placeName = asStr((j['places'] as Map?)?['name']),
+        planCode = '${j['plan_code']}',
+        months = asInt(j['months']),
+        amount = asInt(j['amount']),
+        status = '${j['status']}',
+        paymentRef = asStr(j['payment_ref']),
+        endsAt = asDate(j['ends_at']),
+        createdAt = asDate(j['created_at']);
+  final String id;
+  final String placeId;
+  final String? placeName;
+  final String planCode;
+  final int months;
+  final int amount;
+  final String status;
+  final String? paymentRef;
+  final DateTime? endsAt;
+  final DateTime? createdAt;
+
+  bool get activeNow => status == 'active' && endsAt != null && endsAt!.isAfter(DateTime.now());
 }

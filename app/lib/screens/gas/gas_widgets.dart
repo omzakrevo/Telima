@@ -53,3 +53,39 @@ class PlaceIcon extends StatelessWidget {
 
 /// Ligne « produit : prix : disponibilité ».
 String priceText(int price) => fcfa(price);
+
+/// Étoiles + moyenne + nombre d'avis.
+class RatingBadge extends StatelessWidget {
+  const RatingBadge({super.key, required this.avg, required this.count, this.size = 14});
+  final double? avg;
+  final int count;
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    if (avg == null || count == 0) {
+      return Text('Pas encore d’avis', style: TextStyle(color: AppColors.textMuted, fontSize: size - 1));
+    }
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.star_rounded, size: size + 2, color: AppColors.accent),
+      const SizedBox(width: 2),
+      Text(avg!.toStringAsFixed(1).replaceAll('.', ','), style: TextStyle(fontWeight: FontWeight.w800, fontSize: size)),
+      Text(' ($count)', style: TextStyle(color: AppColors.textMuted, fontSize: size - 1)),
+    ]);
+  }
+}
+
+class SmallTag extends StatelessWidget {
+  const SmallTag(this.text, this.color, {super.key, this.icon});
+  final String text;
+  final Color color;
+  final IconData? icon;
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 3)],
+          Flexible(child: Text(text, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 11.5, fontWeight: FontWeight.w800))),
+        ]),
+      );
+}

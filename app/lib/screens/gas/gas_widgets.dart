@@ -89,3 +89,35 @@ class SmallTag extends StatelessWidget {
         ]),
       );
 }
+
+/// File d'attente signalée sur place : « File moyenne · 15 pers. · ~23 min · il y a 5 min ».
+class QueueChip extends StatelessWidget {
+  const QueueChip({super.key, required this.place, this.full = false});
+  final Place place;
+  final bool full;
+
+  static String label(String level) => switch (level) {
+        'none' => 'Pas de file',
+        'short' => 'File courte',
+        'medium' => 'File moyenne',
+        _ => 'Longue file',
+      };
+  static Color color(String level) => switch (level) {
+        'none' || 'short' => AppColors.primaryDark,
+        'medium' => AppColors.accent,
+        _ => AppColors.danger,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    if (!place.hasQueue) return const SizedBox.shrink();
+    final l = place.queueLevel!;
+    final parts = [
+      label(l),
+      if (place.queuePeople != null) '${place.queuePeople} pers.',
+      if (place.queueWaitMin != null && place.queueWaitMin! > 0) '~${place.queueWaitMin} min',
+      if (full) ageLabel(place.queueAt),
+    ];
+    return SmallTag(parts.join(' · '), color(l), icon: Icons.groups_rounded);
+  }
+}

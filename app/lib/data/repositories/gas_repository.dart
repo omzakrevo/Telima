@@ -78,6 +78,17 @@ class GasRepository {
     place.promoTitle = promos.isEmpty ? null : promos.first.title;
   }
 
+  /// « Je suis sur place » : file d'attente et disponibilités, vérifiées par la position.
+  Future<Json> reportOnSite(String placeId, {required double lat, required double lng, String? queue, int? people, Map<String, String> fuels = const {}}) async =>
+      Map<String, dynamic>.from(await _client.rpc('report_on_site', params: {
+        'p_place_id': placeId,
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_queue': queue,
+        'p_people': people,
+        'p_fuels': fuels,
+      }) as Map);
+
   // ----- Avis -----
 
   Future<List<PlaceReview>> reviews(String placeId) async {

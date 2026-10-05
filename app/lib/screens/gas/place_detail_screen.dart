@@ -7,6 +7,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
 import '../../data/models/gas.dart';
 import '../../providers/auth_providers.dart';
+import '../../providers/core_providers.dart';
 import '../../providers/gas_providers.dart';
 import '../../widgets/common.dart';
 import 'gas_widgets.dart';
@@ -139,6 +140,20 @@ class _Body extends ConsumerWidget {
               ),
             ),
           ]),
+          const SectionTitle('Sur place'),
+          if (place.hasQueue)
+            Padding(padding: const EdgeInsets.only(bottom: 10), child: Align(alignment: Alignment.centerLeft, child: QueueChip(place: place, full: true)))
+          else
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('Pas d’information récente sur la file d’attente.', style: TextStyle(color: AppColors.textMuted)),
+            ),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(54), foregroundColor: AppColors.primaryDark, side: const BorderSide(color: AppColors.primary, width: 1.5)),
+            icon: const Icon(Icons.where_to_vote_rounded),
+            label: const Text('JE SUIS SUR PLACE', style: TextStyle(fontWeight: FontWeight.w800)),
+            onPressed: () => showOnSiteSheet(context, ref, place),
+          ),
           const SectionTitle('Disponibilités'),
           if (place.isStation) ...[
             if (place.fuels.isEmpty) const Text('Aucune information pour le moment. Soyez le premier à signaler !', style: TextStyle(color: AppColors.textMuted)),
@@ -345,5 +360,84 @@ class _Reviews extends ConsumerWidget {
         ),
       if (reviews.isEmpty) const Text('Soyez le premier à donner votre avis.', style: TextStyle(color: AppColors.textMuted)),
     ]);
+  }
+}
+
+/// Feuille « Je suis sur place » : file d'attente + disponibilités, envoyées avec la position.
+Future<void> showOnSiteSheet(BuildContext context, WidgetRef ref, Place place) async {
+  if (!ref.read(authControllerProvider).isSignedIn) {
+    showError(context, Exception('Connectez-vous pour signaler sur place'));
+    return;
+  }
+  String? queue;
+  var people = -1; // -1 = non renseigné
+  final fuels = <String, String>{};
+  final targets = place.isStation ? const ['essence', 'gasoil'] : const ['gas'];
+  String targetLabel(String t) => t == 'essence' ? 'Essence' : t == 'gasoil' ? 'Gasoil' : 'Gaz';
+  final ok = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => StatefulBuilder(
+      builder: (context, setS) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.viewInsetsOf(context).bottom + 20),
+        child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Text('Je suis sur place', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            const Text('Votre position est vérifiée (moins de 300 m). L’information est publiée tout de suite, avec l’heure.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            const SizedBox(height: 14),
+            const Text('File d’attente', style: TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final q in const ['none', 'short', 'medium', 'long'])
+                ChoiceChip(label: Text(QueueChip.label(q)), selected: queue == q, onSelected: (_) => setS(() => queue = queue == q ? null : q)),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              const Expanded(child: Text('Personnes devant vous (environ)', style: TextStyle(fontWeight: FontWeight.w700))),
+              IconButton.filledTonal(onPressed: people <= 0 ? null : () => setS(() => people = people - 5 < 0 ? 0 : people - 5), icon: const Icon(Icons.remove_rounded)),
+              SizedBox(width: 56, child: Text(people < 0 ? '—' : '$people', textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+              IconButton.filledTonal(onPressed: () => setS(() => people = people < 0 ? 5 : people + 5), icon: const Icon(Icons.add_rounded)),
+            ]),
+            const SizedBox(height: 12),
+            for (final t in targets) ...[
+              Text(targetLabel(t), style: const TextStyle(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              Wrap(spacing: 8, children: [
+                for (final a in const [Availability.available, Availability.low, Availability.out])
+                  ChoiceChip(
+                    label: Text(a == Availability.low ? 'Stock incertain' : a.label),
+                    selected: fuels[t] == a.name,
+                    onSelected: (_) => setS(() => fuels[t] == a.name ? fuels.remove(t) : fuels[t] = a.name),
+                  ),
+              ]),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 6),
+            BigActionButton(label: 'Publier', icon: Icons.send_rounded, onPressed: () => Navigator.pop(context, true)),
+          ]),
+        ),
+      ),
+    ),
+  );
+  if (ok != true || !context.mounted) return;
+  if (queue == null && people < 0 && fuels.isEmpty) {
+    showError(context, Exception('Indiquez au moins la file ou une disponibilité'));
+    return;
+  }
+  try {
+    final pos = await ref.read(locationServiceProvider).current();
+    final r = await ref.read(gasRepositoryProvider).reportOnSite(place.id,
+        lat: pos.latitude, lng: pos.longitude, queue: queue, people: people < 0 ? null : people, fuels: fuels);
+    ref.invalidate(placeProvider(place.id));
+    ref.invalidate(nearbyPlacesProvider);
+    if (context.mounted) {
+      final w = r['wait_min'];
+      showSuccess(context, 'Merci ! Vous aidez toute la communauté.${w is num && w > 0 ? ' Attente estimée : ~$w min.' : ''}');
+    }
+  } catch (e) {
+    if (context.mounted) showError(context, e);
   }
 }

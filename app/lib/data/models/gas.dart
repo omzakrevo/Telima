@@ -122,6 +122,10 @@ class Place {
         boost = asInt(j['boost']),
         promoTitle = asStr(j['promo_title']),
         isOsm = j['source'] == 'osm',
+        queueLevel = asStr(j['queue_level']),
+        queuePeople = j['queue_people'] == null ? null : asInt(j['queue_people']),
+        queueWaitMin = j['queue_wait_min'] == null ? null : asInt(j['queue_wait_min']),
+        queueAt = asDate(j['queue_at']),
         products = [for (final p in (j['products'] as List? ?? const [])) PlaceProduct(Map<String, dynamic>.from(p as Map))],
         fuels = [for (final f in (j['fuels'] as List? ?? const [])) PlaceFuel(Map<String, dynamic>.from(f as Map))];
 
@@ -146,7 +150,14 @@ class Place {
   final int boost;
   String? promoTitle;
   final bool isOsm;
+  final String? queueLevel; // none | short | medium | long
+  final int? queuePeople;
+  final int? queueWaitMin;
+  final DateTime? queueAt;
   final List<PlaceProduct> products;
+
+  /// File d'attente signalée sur place il y a moins de 2 h.
+  bool get hasQueue => queueLevel != null && queueAt != null && DateTime.now().difference(queueAt!.toLocal()) < const Duration(hours: 2);
   final List<PlaceFuel> fuels;
 
   String get subtitle => [if (brandLabel != null && brandLabel!.isNotEmpty) brandLabel!, if (neighborhood != null && neighborhood!.isNotEmpty) neighborhood!].join(' · ');

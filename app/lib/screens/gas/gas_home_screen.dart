@@ -273,6 +273,7 @@ class PlaceCard extends StatelessWidget {
           const SizedBox(height: 6),
           Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
             RatingBadge(avg: p.ratingAvg, count: p.ratingCount),
+            if (p.hasQueue) QueueChip(place: p),
             if (p.promoTitle != null) SmallTag(p.promoTitle!, AppColors.danger, icon: Icons.local_offer_rounded),
             if (p.boost >= 2) const SmallTag('Sponsorisé', AppColors.info) else if (p.boost == 1) const SmallTag('Recommandé', AppColors.primaryDark, icon: Icons.verified_rounded),
           ]),

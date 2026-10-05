@@ -6,7 +6,10 @@ import 'package:latlong2/latlong.dart';
 
 import '../../config/theme.dart';
 import '../../core/utils/formatters.dart';
+import '../../data/models/config_models.dart';
 import '../../data/models/gas.dart';
+import '../../providers/core_providers.dart';
+import '../client/location_picker_screen.dart' show geocodingProvider;
 import '../../providers/gas_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/map_widgets.dart';
@@ -39,6 +42,53 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
   }
 
   void _update(GasFilters Function(GasFilters) f) => ref.read(gasFiltersProvider.notifier).set(f(ref.read(gasFiltersProvider)));
+
+  /// Texte saisi : d'abord comme un quartier (on recentre la recherche dessus), sinon comme un nom / une enseigne.
+  Future<void> _submitSearch(String text) async {
+    final v = text.trim();
+    if (v.isEmpty) {
+      _update((f) => f.copyWith(query: '', clearArea: true));
+      return;
+    }
+    final f = ref.read(gasFiltersProvider);
+    final cities = ref.read(citiesProvider).value ?? const <City>[];
+    final city = cities.where((c) => c.id == f.cityId).firstOrNull;
+    final near = city?.center ?? ref.read(myPositionProvider).value;
+    final label = city == null ? v : '$v, ${city.name}';
+    final hits = await ref.read(geocodingProvider).search('$label, Burkina Faso', near: near);
+    if (!mounted) return;
+    if (hits.isNotEmpty) {
+      _update((x) => x.copyWith(query: '', area: hits.first.point, areaLabel: v, clearRadius: true));
+    } else {
+      _update((x) => x.copyWith(query: v, clearArea: true));
+    }
+  }
+
+  Future<void> _pickCity() async {
+    final cities = (ref.read(citiesProvider).value ?? const <City>[]).where((c) => c.isActive).toList();
+    final f = ref.read(gasFiltersProvider);
+    final id = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: ListView(shrinkWrap: true, children: [
+          ListTile(
+            leading: const Icon(Icons.my_location_rounded),
+            title: const Text('Autour de ma position'),
+            selected: f.cityId == null,
+            onTap: () => Navigator.pop(context, ''),
+          ),
+          for (final c in cities)
+            ListTile(leading: const Icon(Icons.location_city_rounded), title: Text(c.name), selected: f.cityId == c.id, onTap: () => Navigator.pop(context, c.id)),
+        ]),
+      ),
+    );
+    if (id == null) return;
+    _search.clear();
+    _update((x) => id.isEmpty
+        ? x.copyWith(clearCity: true, clearArea: true, clearRadius: true, query: '')
+        : x.copyWith(cityId: id, clearArea: true, clearRadius: true, query: ''));
+  }
 
   Future<void> _filters() async {
     final brands = ref.read(gasBrandsProvider).value ?? const [];
@@ -131,7 +181,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
                         }),
                 ),
                 onChanged: (_) => setState(() {}),
-                onSubmitted: (v) => _update((f) => f.copyWith(query: v)),
+                onSubmitted: _submitSearch,
               ),
             ),
             if (!stations) ...[
@@ -144,6 +194,10 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
             ],
           ]),
         ),
+        _ZoneBar(onPickCity: _pickCity, onClearArea: () {
+          _search.clear();
+          _update((f) => f.copyWith(clearArea: true, query: ''));
+        }),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async {
@@ -154,16 +208,19 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
               value: places,
               onRetry: () => ref.invalidate(nearbyPlacesProvider),
               builder: (list) {
-                if (_map) return _PlacesMap(places: list, me: pos);
+                if (_map) {
+                  final center = filters.customCenter ? ref.watch(searchCenterProvider).value : pos;
+                  return _PlacesMap(key: ValueKey('${list.length}-${center?.latitude}-${center?.longitude}'), places: list, me: center);
+                }
                 if (list.isEmpty) {
                   return ListView(children: [
                     const SizedBox(height: 60),
                     Icon(stations ? Icons.local_gas_station_rounded : Icons.local_fire_department_rounded, size: 56, color: AppColors.textMuted),
                     const SizedBox(height: 12),
-                    const Center(child: Text('Aucun résultat près de vous', style: TextStyle(fontWeight: FontWeight.w700))),
+                    const Center(child: Text('Aucun résultat dans ce rayon', style: TextStyle(fontWeight: FontWeight.w700))),
                     const Padding(
                       padding: EdgeInsets.all(20),
-                      child: Text('Essayez d’enlever un filtre, ou revenez plus tard : de nouveaux points sont ajoutés régulièrement.',
+                      child: Text('Agrandissez le rayon, changez de ville, ou enlevez un filtre. De nouveaux points sont ajoutés régulièrement : de nouveaux points sont ajoutés régulièrement.',
                           textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
                     ),
                   ]);
@@ -172,7 +229,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
                   itemCount: list.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => FadeSlideIn.staggered(index: i.clamp(0, 6), child: PlaceCard(place: list[i])),
+                  itemBuilder: (_, i) => FadeSlideIn.staggered(index: i.clamp(0, 6), child: PlaceCard(place: list[i], fromLabel: filters.customCenter ? 'du centre' : 'de vous')),
                 );
               },
             ),
@@ -185,8 +242,9 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
 
 /// Carte d'un point dans la liste « Autour de moi ».
 class PlaceCard extends StatelessWidget {
-  const PlaceCard({super.key, required this.place});
+  const PlaceCard({super.key, required this.place, this.fromLabel = 'de vous'});
   final Place place;
+  final String fromLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +267,7 @@ class PlaceCard extends StatelessWidget {
             if (p.distanceKm != null)
               Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                 Text(km(p.distanceKm), style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
-                const Text('de vous', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                Text(fromLabel, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
               ]),
           ]),
           const SizedBox(height: 6),
@@ -245,7 +303,7 @@ class PlaceCard extends StatelessWidget {
 }
 
 class _PlacesMap extends StatelessWidget {
-  const _PlacesMap({required this.places, required this.me});
+  const _PlacesMap({super.key, required this.places, required this.me});
   final List<Place> places;
   final LatLng? me;
 
@@ -281,6 +339,56 @@ class _PlacesMap extends StatelessWidget {
         ]),
         osmAttribution(),
       ],
+    );
+  }
+}
+
+/// Ville, quartier et rayon de recherche.
+class _ZoneBar extends ConsumerWidget {
+  const _ZoneBar({required this.onPickCity, required this.onClearArea});
+  final VoidCallback onPickCity;
+  final VoidCallback onClearArea;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final f = ref.watch(gasFiltersProvider);
+    final radius = ref.watch(searchRadiusProvider);
+    final cities = ref.watch(citiesProvider).value ?? const <City>[];
+    final city = cities.where((c) => c.id == f.cityId).firstOrNull;
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ActionChip(
+              avatar: Icon(city == null ? Icons.my_location_rounded : Icons.location_city_rounded, size: 18),
+              label: Text(city?.name ?? 'Ma position'),
+              onPressed: onPickCity,
+            ),
+          ),
+          if (f.area != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: InputChip(
+                avatar: const Icon(Icons.place_rounded, size: 18),
+                label: Text(f.areaLabel ?? 'Quartier'),
+                onDeleted: onClearArea,
+              ),
+            ),
+          for (final r in const [1.0, 3.0, 5.0, 10.0, 25.0, 50.0])
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: ChoiceChip(
+                label: Text('${r.toInt()} km'),
+                selected: (radius - r).abs() < 0.01,
+                onSelected: (_) => ref.read(gasFiltersProvider.notifier).set(f.copyWith(radiusKm: r)),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

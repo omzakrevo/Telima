@@ -9,6 +9,9 @@ import '../config/theme.dart';
 import '../core/utils/formatters.dart';
 import '../core/utils/geo.dart';
 import '../data/models/delivery.dart';
+import '../data/models/gas.dart';
+import '../core/utils/launchers.dart';
+import '../providers/gas_providers.dart';
 import '../providers/core_providers.dart';
 import 'map_widgets.dart';
 
@@ -34,6 +37,9 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
   LatLng? _routedFrom;
   DateTime? _routedAt;
   String? _routedPhase;
+  List<Place> _stations = [];
+  bool _showStations = true;
+  String? _stationsKey;
 
   LatLng get _target => widget.delivery.status.headingToPickup ? widget.delivery.pickup : widget.delivery.dropoff;
 
@@ -62,6 +68,7 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         _routedPhase = 'overview';
         final r = await ref.read(routingServiceProvider).route([d.pickup, d.dropoff]);
         if (mounted) setState(() => _route = r.points);
+        _loadStations();
       }
       return;
     }
@@ -79,6 +86,7 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         _remainingKm = r.distanceKm;
         _remainingMin = r.durationMin;
       });
+      _loadStations();
     } else {
       // estimation locale sans requête réseau
       final straight = haversineKm(from, _target) * 1.3;
@@ -87,6 +95,43 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         _remainingMin = straight / speed * 60;
       });
     }
+  }
+
+  /// Stations-service à moins de 1 km de l'itinéraire affiché.
+  Future<void> _loadStations() async {
+    final pts = _route.length >= 2 ? _route : [widget.delivery.pickup, widget.delivery.dropoff];
+    final b = LatLngBounds.fromPoints(pts);
+    final key = '${b.center.latitude.toStringAsFixed(2)},${b.center.longitude.toStringAsFixed(2)},${pts.length ~/ 20}';
+    if (key == _stationsKey) return;
+    _stationsKey = key;
+    try {
+      final radius = (haversineKm(b.southWest, b.northEast) / 2 + 1.5).clamp(2.0, 40.0);
+      final found = await ref.read(gasRepositoryProvider).search(
+          lat: b.center.latitude, lng: b.center.longitude, stations: true, maxKm: radius, useCache: false, limit: 200);
+      final step = (pts.length / 150).ceil().clamp(1, 1000);
+      final sampled = [for (var i = 0; i < pts.length; i += step) pts[i], pts.last];
+      final near = found.where((s) => sampled.any((q) => haversineKm(q, s.position) <= 1.0)).take(25).toList();
+      if (mounted) setState(() => _stations = near);
+    } catch (_) {}
+  }
+
+  void _stationSheet(Place s) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(s.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            if (s.subtitle.isNotEmpty) Text(s.subtitle, style: const TextStyle(color: AppColors.textMuted)),
+            if (s.hours != null && s.hours!.isNotEmpty) Text(s.hours!),
+            const SizedBox(height: 12),
+            FilledButton.icon(onPressed: () => openNavigation(s.position), icon: const Icon(Icons.directions_rounded), label: const Text('Itinéraire vers cette station')),
+          ]),
+        ),
+      ),
+    );
   }
 
   @override
@@ -99,7 +144,8 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: widget.height,
-          child: FlutterMap(
+          child: Stack(children: [
+            FlutterMap(
             mapController: _map,
             options: fitOptions(points),
             children: [
@@ -113,9 +159,39 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
                 dropoffMarker(d.dropoff),
                 if (driver != null) driverMarker(driver),
               ]),
+              if (_showStations)
+                MarkerLayer(markers: [
+                  for (final s in _stations)
+                    Marker(
+                      point: s.position,
+                      width: 34,
+                      height: 34,
+                      child: GestureDetector(
+                        onTap: () => _stationSheet(s),
+                        child: Container(
+                          decoration: BoxDecoration(color: AppColors.info, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black38)]),
+                          child: const Icon(Icons.local_gas_station_rounded, color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ),
+                ]),
               osmAttribution(),
             ],
-          ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: FilterChip(
+                visualDensity: VisualDensity.compact,
+                backgroundColor: Colors.white,
+                selectedColor: AppColors.info.withValues(alpha: 0.2),
+                avatar: const Icon(Icons.local_gas_station_rounded, size: 16, color: AppColors.info),
+                label: Text(_stations.isEmpty ? 'Stations' : 'Stations (${_stations.length})'),
+                selected: _showStations,
+                onSelected: (v) => setState(() => _showStations = v),
+              ),
+            ),
+          ]),
         ),
       ),
       if (widget.showStats && driver != null && d.status.hasDriver && !d.status.isFinished && _remainingKm != null)

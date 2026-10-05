@@ -58,7 +58,8 @@ final gasBrandsProvider = FutureProvider<List<GasBrand>>((ref) => ref.watch(gasR
 final nearbyPlacesProvider = FutureProvider<List<Place>>((ref) async {
   final pos = await ref.watch(myPositionProvider.future);
   final f = ref.watch(gasFiltersProvider);
-  return ref.watch(gasRepositoryProvider).search(
+  final repo = ref.watch(gasRepositoryProvider);
+  Future<List<Place>> run(double maxKm) => repo.search(
         lat: pos.latitude,
         lng: pos.longitude,
         stations: f.stations,
@@ -67,7 +68,11 @@ final nearbyPlacesProvider = FutureProvider<List<Place>>((ref) async {
         onlyAvailable: f.onlyAvailable && !f.stations,
         delivers: f.delivers && !f.stations,
         query: f.query,
+        maxKm: maxKm,
       );
+  final near = await run(15);
+  // Rien autour de la personne (ex. autre ville) : on élargit pour ne jamais afficher un écran vide.
+  return near.isNotEmpty || f.query.isNotEmpty ? near : run(150);
 });
 
 final favoritePlaceIdsProvider = FutureProvider<Set<String>>((ref) => ref.watch(gasRepositoryProvider).favoriteIds());

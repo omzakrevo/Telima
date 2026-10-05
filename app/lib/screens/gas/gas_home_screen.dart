@@ -271,7 +271,7 @@ class _PlacesMap extends StatelessWidget {
                 child: Column(children: [
                   Container(
                     padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(color: p.summary.color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black38)]),
+                    decoration: BoxDecoration(color: p.summary == Availability.unknown ? (p.isStation ? AppColors.info : AppColors.accent) : p.summary.color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black38)]),
                     child: Icon(p.isStation ? Icons.local_gas_station_rounded : Icons.local_fire_department_rounded, color: Colors.white, size: 20),
                   ),
                   Icon(Icons.arrow_drop_down, color: p.summary.color, size: 18),

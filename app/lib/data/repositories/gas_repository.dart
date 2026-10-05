@@ -26,6 +26,8 @@ class GasRepository {
     bool onlyAvailable = false,
     bool delivers = false,
     String? query,
+    bool useCache = true,
+    int limit = 60,
   }) async {
     final cacheKey = 'places_${stations == null ? 'all' : stations ? 'fuel' : 'gas'}';
     try {
@@ -39,13 +41,14 @@ class GasRepository {
         'p_only_available': onlyAvailable,
         'p_delivers': delivers,
         'p_query': (query ?? '').trim().isEmpty ? null : query!.trim(),
+        'p_limit': limit,
       });
-      if (brandId == null && size == null && !onlyAvailable && !delivers && (query ?? '').isEmpty) {
+      if (useCache && brandId == null && size == null && !onlyAvailable && !delivers && (query ?? '').isEmpty) {
         await _cache.put(cacheKey, rows);
       }
       return _places(rows);
     } catch (e) {
-      final cached = _cache.get<List>(cacheKey);
+      final cached = useCache ? _cache.get<List>(cacheKey) : null;
       if (cached != null) return _places(cached);
       rethrow;
     }

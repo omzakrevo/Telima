@@ -61,9 +61,22 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Liens profonds : go_router reçoit directement le chemin (ex. /r/lagrace) -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Liens restaurants partagés : https://telimatchi.com/r/<slug> ouvre l'app sans passer par le navigateur
+                 (vérifié par https://telimatchi.com/.well-known/assetlinks.json) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="telimatchi.com"/>
+                <data android:host="www.telimatchi.com"/>
+                <data android:pathPrefix="/r/"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

@@ -158,19 +158,21 @@
         navigator.serviceWorker.register("sw.js").catch(function () {});
       }
 
-      // Téléchargement préalable des gros fichiers avec progression et reprise automatique,
-      // puis démarrage de Flutter (qui les retrouve dans le cache du navigateur).
+      // Téléchargement préalable (avec reprise automatique) du fichier principal et du moteur de dessin CanvasKit,
+      // puis démarrage de Flutter. CanvasKit est pris sur les serveurs de Google (gstatic) : compressé, rapide et
+      // déjà en cache chez beaucoup de visiteurs. C'est exactement l'adresse que Flutter utilisera ensuite :
+      // le navigateur ne le télécharge qu'une seule fois (avant, il l'était aussi depuis notre propre serveur).
       var chromium = typeof window.ImageDecoder !== "undefined" && typeof Intl.v8BreakIterator !== "undefined";
-      var ck = chromium ? "canvaskit/chromium/" : "canvaskit/";
-      var files = ["main.dart.js", ck + "canvaskit.js", ck + "canvaskit.wasm"];
+      var files = ["main.dart.js"];
+      var optional = {};
       var loaded = {}, totals = {};
-      function mo(n) { return (n / 1048576).toFixed(1).replace(".", ","); }
       function progress() {
         var l = 0, t = 0, known = true;
         files.forEach(function (f) { l += loaded[f] || 0; if (totals[f]) t += totals[f]; else known = false; });
-        say("Chargement de l'application… " + mo(l) + (known && t ? " / " + mo(t) : "") + " Mo");
+        var pct = known && t ? Math.min(99, Math.round(l / t * 100)) : null;
+        say("Chargement de l'application…" + (pct !== null ? " " + pct + " %" : ""));
         var bar = document.getElementById("telima-bar");
-        if (bar) bar.style.width = (known && t ? Math.min(100, Math.round(l / t * 100)) : Math.min(90, Math.round(l / 3500000 * 100))) + "%";
+        if (bar) bar.style.width = (pct !== null ? pct : Math.min(90, Math.round(l / 2500000 * 100))) + "%";
       }
       function get(f, attempt) {
         return fetch(f).then(function (res) {
@@ -202,7 +204,20 @@
         setTimeout(function () { if (!done) fail("Le démarrage prend trop de temps. Rechargez la page."); }, 60000);
       }
       if (!window.fetch) { start(); return; }
-      Promise.all(files.map(function (f) { return get(f, 0); })).then(start, function (err) {
+      // On repère la version exacte du moteur dans flutter_bootstrap.js (petit fichier) pour précharger CanvasKit.
+      fetch("flutter_bootstrap.js", { cache: "no-cache" }).then(function (r) { return r.text(); }).then(function (t) {
+        var m = /"engineRevision":"([a-f0-9]+)"/.exec(t);
+        if (m && !/useLocalCanvasKit":true|canvasKitBaseUrl/.test(t)) {
+          var base = "https://www.gstatic.com/flutter-canvaskit/" + m[1] + "/" + (chromium ? "chromium/" : "");
+          [base + "canvaskit.js", base + "canvaskit.wasm"].forEach(function (u) { files.push(u); optional[u] = true; });
+        }
+      }).catch(function () {}).then(function () {
+        // Le fichier principal est indispensable ; CanvasKit est facultatif ici (Flutter le chargera lui-même s'il manque).
+        return Promise.all(files.map(function (f) {
+          var p = get(f, 0);
+          return optional[f] ? p.catch(function () { loaded[f] = 0; totals[f] = 0; }) : p;
+        }));
+      }).then(start, function (err) {
         fail("Le téléchargement de l'application a échoué (" + err.message + "). Vérifiez votre connexion Internet puis rechargez la page.");
       });
     })();

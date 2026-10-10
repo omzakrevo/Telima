@@ -2,6 +2,13 @@
 <html lang="fr">
 <head>
   <base href="/">
+  <script>
+    // Anciens liens partagés (telimatchi.com/#/r/nom) : on les convertit en telimatchi.com/r/nom avant le démarrage.
+    (function () {
+      var h = location.hash || "";
+      if (h.indexOf("#/") === 0) { try { history.replaceState(null, "", h.slice(1)); } catch (e) {} }
+    })();
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Telima — livraison de colis au Burkina Faso">

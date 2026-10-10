@@ -30,7 +30,7 @@ Map<String, dynamic> _restaurantJson() => {
 
 void main() {
   test('le lien partagé pointe vers la page publique du restaurant', () {
-    expect(restaurantShareLink('chez-awa'), 'https://telimatchi.com/#/r/chez-awa');
+    expect(restaurantShareLink('chez-awa'), 'https://telimatchi.com/r/chez-awa');
   });
 
   test('un restaurant est lu depuis la réponse du serveur', () {

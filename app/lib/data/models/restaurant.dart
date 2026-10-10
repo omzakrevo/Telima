@@ -15,9 +15,9 @@ String? restaurantPhotoUrl(String? path) {
 /// Site public de Telima (même domaine que la page de téléchargement).
 const kSiteUrl = 'https://telimatchi.com';
 
-/// Lien à partager avec les clients. L'application Web utilise les adresses avec « # »
-/// (aucune configuration du serveur d'hébergement n'est nécessaire).
-String restaurantShareLink(String slug) => '$kSiteUrl/#/r/$slug';
+/// Lien à partager avec les clients. Adresse sans « # » : elle ouvre l'application Android (liens profonds)
+/// et le site web. Le serveur d'hébergement doit renvoyer index.html pour /r/* (voir scripts/deploy_lws.py --htaccess).
+String restaurantShareLink(String slug) => '$kSiteUrl/r/$slug';
 
 class Restaurant {
   Restaurant(Json j)

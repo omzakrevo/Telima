@@ -34,7 +34,7 @@ const _items = [
   _NavItem('/admin/map', 'Carte en direct', Icons.map_outlined),
   _NavItem('/admin/drivers', 'Livreurs', Icons.delivery_dining_outlined),
   _NavItem('/admin/users', 'Utilisateurs', Icons.people_outline),
-  _NavItem('/admin/gas', 'Gaz & carburant', Icons.local_fire_department_outlined),
+  _NavItem('/admin/gas', 'Gaz & carburant', Icons.inventory_2_outlined),
   _NavItem('/admin/payments', 'Paiements à vérifier', Icons.fact_check_outlined, adminOnly: true),
   _NavItem('/admin/finance', 'Paiements & retraits', Icons.payments_outlined),
   _NavItem('/admin/pricing', 'Tarifs', Icons.price_change_outlined, adminOnly: true),

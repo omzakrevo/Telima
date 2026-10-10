@@ -177,7 +177,7 @@ class ClientHomeScreen extends ConsumerWidget {
               child: Row(children: [
                 Expanded(
                   child: _MainAction(
-                    icon: Icons.local_fire_department_rounded,
+                    icon: Icons.inventory_2,
                     title: 'Trouver du gaz',
                     caption: 'Commander · livraison',
                     color: AppColors.accent,
@@ -187,7 +187,7 @@ class ClientHomeScreen extends ConsumerWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: _MainAction(
-                    icon: Icons.local_gas_station_rounded,
+                    icon: Icons.directions_car,
                     title: 'Stations-service',
                     caption: 'Essence · gasoil',
                     color: AppColors.info,

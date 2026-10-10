@@ -100,7 +100,7 @@ class _GetAppCardState extends ConsumerState<GetAppCard> {
               ),
             OutlinedButton.icon(
               onPressed: _install,
-              icon: const Icon(Icons.add_to_home_screen_rounded),
+              icon: const Icon(Icons.system_update_rounded),
               label: const Text('Installer sur ce téléphone'),
             ),
           ]),
@@ -174,7 +174,7 @@ class GetAppChip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!kIsWeb || pwaIsStandalone()) return const SizedBox.shrink();
     return ActionChip(
-      avatar: const Icon(Icons.download_rounded, size: 18, color: AppColors.primary),
+      avatar: const Icon(Icons.download, size: 18, color: AppColors.primary),
       label: const Text('Obtenir l’appli', style: TextStyle(fontWeight: FontWeight.w700)),
       backgroundColor: Colors.white,
       side: const BorderSide(color: AppColors.line),

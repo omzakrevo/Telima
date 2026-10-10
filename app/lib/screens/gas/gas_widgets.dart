@@ -46,7 +46,7 @@ class PlaceIcon extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(color: color.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(size * 0.3)),
-      child: Icon(isStation ? Icons.local_gas_station_rounded : Icons.local_fire_department_rounded, color: color, size: size * 0.58),
+      child: Icon(isStation ? Icons.directions_car : Icons.inventory_2, color: color, size: size * 0.58),
     );
   }
 }

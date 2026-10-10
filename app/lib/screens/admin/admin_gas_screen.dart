@@ -53,7 +53,7 @@ class _PlacesTab extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       floatingActionButton: onlyPending
           ? null
-          : FloatingActionButton.extended(onPressed: () => _add(context, ref), icon: const Icon(Icons.add_location_alt_rounded), label: const Text('Ajouter un point')),
+          : FloatingActionButton.extended(onPressed: () => _add(context, ref), icon: const Icon(Icons.add_location_alt), label: const Text('Ajouter un point')),
       body: AsyncBody<List<Place>>(
         value: async,
         onRetry: () => ref.invalidate(_adminPlacesProvider),
@@ -186,14 +186,14 @@ class _BrandsTab extends ConsumerWidget {
             ref.invalidate(gasBrandsProvider);
           }
         },
-        child: const Icon(Icons.add_rounded),
+        child: const Icon(Icons.add),
       ),
       body: AsyncBody<List<GasBrand>>(
         value: async,
         onRetry: () => ref.invalidate(gasBrandsProvider),
         builder: (list) => ListView(
           padding: const EdgeInsets.all(16),
-          children: [for (final b in list) ListTile(leading: const Icon(Icons.local_fire_department_rounded, color: AppColors.accent), title: Text(b.name))],
+          children: [for (final b in list) ListTile(leading: const Icon(Icons.inventory_2, color: AppColors.accent), title: Text(b.name))],
         ),
       ),
     );

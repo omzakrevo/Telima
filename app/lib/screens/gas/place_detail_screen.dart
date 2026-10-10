@@ -102,7 +102,7 @@ class _Body extends ConsumerWidget {
             ),
             IconButton(
               tooltip: 'Favori',
-              icon: Icon(isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded, color: AppColors.danger),
+              icon: Icon(isFav ? Icons.star_rounded : Icons.star_outline_rounded, color: AppColors.danger),
               onPressed: () async {
                 if (!ref.read(authControllerProvider).isSignedIn) {
                   showError(context, Exception('Connectez-vous pour ajouter aux favoris'));
@@ -116,23 +116,23 @@ class _Body extends ConsumerWidget {
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
             RatingBadge(avg: place.ratingAvg, count: place.ratingCount, size: 15),
-            if (place.promoTitle != null) SmallTag('Promotion : ${place.promoTitle}', AppColors.danger, icon: Icons.local_offer_rounded),
+            if (place.promoTitle != null) SmallTag('Promotion : ${place.promoTitle}', AppColors.danger, icon: Icons.tag),
             if (place.isOsm) const SmallTag('Données OpenStreetMap', AppColors.textMuted),
           ]),
           const SizedBox(height: 12),
-          if (place.address != null && place.address!.isNotEmpty) _Info(Icons.place_rounded, place.address!),
+          if (place.address != null && place.address!.isNotEmpty) _Info(Icons.place_outlined, place.address!),
           if (place.hours != null && place.hours!.isNotEmpty) _Info(Icons.schedule_rounded, place.hours!),
           if (place.phone != null && place.phone!.isNotEmpty) _Info(Icons.phone_rounded, displayPhone(place.phone)),
           if (place.distanceKm != null) _Info(Icons.near_me_rounded, '${km(place.distanceKm)} de vous'),
-          if (place.services.isNotEmpty) _Info(Icons.add_business_rounded, place.services.join(' · ')),
+          if (place.services.isNotEmpty) _Info(Icons.add_business, place.services.join(' · ')),
           if (place.delivers) _Info(Icons.delivery_dining_rounded, 'Livre à domicile jusqu’à ${place.deliveryRadiusKm.toStringAsFixed(0)} km'),
           const SizedBox(height: 14),
           Row(children: [
-            Expanded(child: _BigAction(icon: Icons.directions_rounded, label: 'ITINÉRAIRE', color: AppColors.info, onTap: () => openNavigation(place.position))),
+            Expanded(child: _BigAction(icon: Icons.navigation, label: 'ITINÉRAIRE', color: AppColors.info, onTap: () => openNavigation(place.position))),
             const SizedBox(width: 10),
             Expanded(
               child: _BigAction(
-                icon: Icons.call_rounded,
+                icon: Icons.call,
                 label: 'APPELER',
                 color: AppColors.primary,
                 onTap: place.phone == null || place.phone!.isEmpty ? null : () => callPhone(place.phone!),
@@ -170,7 +170,7 @@ class _Body extends ConsumerWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: Wrap(spacing: 8, children: [
-              ActionChip(avatar: const Icon(Icons.store_mall_directory_outlined, size: 18), label: const Text('Point fermé'), onPressed: () => _report(context, ref, 'closed')),
+              ActionChip(avatar: const Icon(Icons.store_mall_directory, size: 18), label: const Text('Point fermé'), onPressed: () => _report(context, ref, 'closed')),
               ActionChip(
                 avatar: const Icon(Icons.price_change_outlined, size: 18),
                 label: const Text('Prix incorrect'),
@@ -289,7 +289,7 @@ class _Reviews extends ConsumerWidget {
               for (var i = 1; i <= 5; i++)
                 IconButton(
                   onPressed: () => setS(() => rating = i),
-                  icon: Icon(i <= rating ? Icons.star_rounded : Icons.star_border_rounded, color: AppColors.accent, size: 34),
+                  icon: Icon(i <= rating ? Icons.star_rounded : Icons.star_outline_rounded, color: AppColors.accent, size: 34),
                 ),
             ]),
             TextField(controller: c, maxLength: 500, maxLines: 3, decoration: const InputDecoration(labelText: 'Commentaire (facultatif)')),
@@ -323,7 +323,7 @@ class _Reviews extends ConsumerWidget {
         const Spacer(),
         OutlinedButton.icon(
           onPressed: () => _write(context, ref, mine),
-          icon: const Icon(Icons.rate_review_outlined, size: 18),
+          icon: const Icon(Icons.edit_outlined, size: 18),
           label: Text(mine == null ? 'Donner mon avis' : 'Modifier mon avis'),
         ),
       ]),
@@ -335,7 +335,7 @@ class _Reviews extends ConsumerWidget {
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.line)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              for (var i = 1; i <= 5; i++) Icon(i <= r.rating ? Icons.star_rounded : Icons.star_border_rounded, size: 16, color: AppColors.accent),
+              for (var i = 1; i <= 5; i++) Icon(i <= r.rating ? Icons.star_rounded : Icons.star_outline_rounded, size: 16, color: AppColors.accent),
               const SizedBox(width: 8),
               Expanded(child: Text(r.mine ? 'Vous' : r.author, style: const TextStyle(fontWeight: FontWeight.w700))),
               if (r.verified) const SmallTag('Achat vérifié', AppColors.primaryDark, icon: Icons.verified_rounded),

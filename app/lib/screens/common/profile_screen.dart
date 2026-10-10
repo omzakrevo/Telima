@@ -67,7 +67,7 @@ class ProfileScreen extends ConsumerWidget {
           child: Column(children: [
             for (final (i, row) in [
               MenuRow(icon: Icons.edit_outlined, label: 'Modifier mon profil', image: Ico3D.pencil, onTap: () => context.push('/profile/edit')),
-              MenuRow(icon: Icons.lock_outline_rounded, label: 'Changer mon mot de passe', image: Ico3D.key, onTap: () => _changePassword(context, ref)),
+              MenuRow(icon: Icons.lock_outline, label: 'Changer mon mot de passe', image: Ico3D.key, onTap: () => _changePassword(context, ref)),
               if (user.role == UserRole.client)
                 MenuRow(icon: Icons.receipt_long_outlined, label: 'Historique des livraisons', image: Ico3D.receipt, onTap: () => context.push('/client/history')),
               if (user.role == UserRole.client)
@@ -75,16 +75,16 @@ class ProfileScreen extends ConsumerWidget {
               if (user.role == UserRole.client)
                 MenuRow(icon: Icons.delivery_dining_outlined, label: 'Devenir livreur', image: Ico3D.scooter, onTap: () => context.push('/driver/apply')),
               if (user.role == UserRole.client)
-                MenuRow(icon: Icons.local_fire_department_outlined, label: 'Vendre du gaz / ma station', image: Ico3D.store, onTap: () => context.push('/vendor')),
-              MenuRow(icon: Icons.notifications_none_rounded, label: 'Notifications', image: Ico3D.bell, onTap: () => context.push('/notifications')),
-              MenuRow(icon: Icons.support_agent_rounded, label: 'Contacter le support', image: Ico3D.headphone, onTap: () => context.push('/support')),
+                MenuRow(icon: Icons.inventory_2_outlined, label: 'Vendre du gaz / ma station', image: Ico3D.store, onTap: () => context.push('/vendor')),
+              MenuRow(icon: Icons.notifications_none, label: 'Notifications', image: Ico3D.bell, onTap: () => context.push('/notifications')),
+              MenuRow(icon: Icons.support_agent, label: 'Contacter le support', image: Ico3D.headphone, onTap: () => context.push('/support')),
               if (kIsWeb && !pwaIsStandalone())
-                MenuRow(icon: Icons.download_rounded, label: 'Obtenir l’application', image: Ico3D.phone, onTap: () => showGetAppSheet(context)),
+                MenuRow(icon: Icons.download, label: 'Obtenir l’application', image: Ico3D.phone, onTap: () => showGetAppSheet(context)),
             ].indexed)
               FadeSlideIn.staggered(index: i, offset: 10, child: row),
             const SizedBox(height: 10),
             MenuRow(
-              icon: Icons.logout_rounded,
+              icon: Icons.logout,
               label: 'Se déconnecter',
               image: Ico3D.door,
               color: AppColors.danger,

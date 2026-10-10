@@ -1,0 +1,60 @@
+name: Deploy web (LWS)
+
+# Lancé à la main : GitHub > Actions > "Deploy web (LWS)" > Run workflow.
+# Compile le site Flutter web puis l'envoie par SFTP sur l'hébergement LWS.
+# Les identifiants ne sont JAMAIS dans le dépôt : ils sont dans Settings > Secrets and variables > Actions :
+#   LWS_HOST, LWS_USER, LWS_PASS, LWS_DIR (ex. /htdocs), LWS_PORT (facultatif, 22 par défaut),
+#   SUPABASE_URL, SUPABASE_ANON_KEY
+
+on:
+  workflow_dispatch:
+    inputs:
+      htaccess:
+        description: "Envoyer aussi une règle .htaccess (sauvegarde l'ancien en .htaccess.bak)"
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.6"
+          channel: stable
+          cache: true
+
+      - name: Fichier de configuration Supabase
+        working-directory: app
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          python3 - <<'EOF'
+          import json, os
+          json.dump({"SUPABASE_URL": os.environ["SUPABASE_URL"],
+                     "SUPABASE_ANON_KEY": os.environ["SUPABASE_ANON_KEY"]},
+                    open("env.json", "w"))
+          EOF
+
+      - name: Dépendances
+        working-directory: app
+        run: flutter pub get
+
+      - name: Compiler le site web
+        working-directory: app
+        run: flutter build web --release --dart-define-from-file=env.json
+
+      - name: Envoyer sur LWS (SFTP)
+        env:
+          LWS_HOST: ${{ secrets.LWS_HOST }}
+          LWS_USER: ${{ secrets.LWS_USER }}
+          LWS_PASS: ${{ secrets.LWS_PASS }}
+          LWS_DIR: ${{ secrets.LWS_DIR }}
+          LWS_PORT: ${{ secrets.LWS_PORT }}
+        run: |
+          pip install paramiko
+          if [ "${{ inputs.htaccess }}" = "true" ]; then EXTRA="--htaccess"; else EXTRA=""; fi
+          python scripts/deploy_lws.py --yes $EXTRA

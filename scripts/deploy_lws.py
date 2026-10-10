@@ -50,10 +50,10 @@ HTACCESS = """# Telima : réécriture pour l'application web, MIME, compression 
   AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json application/wasm image/svg+xml
 </IfModule>
 <IfModule mod_headers.c>
-  <FilesMatch "\\.(js|wasm|otf|ttf|png|webp|ico)$">
+  <FilesMatch "\\.(wasm|otf|ttf|png|webp|ico)$">
     Header set Cache-Control "public, max-age=604800"
   </FilesMatch>
-  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|sw\\.js)$">
+  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|sw\\.js)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
 </IfModule>

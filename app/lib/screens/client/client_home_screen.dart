@@ -196,6 +196,31 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
               ]),
             ),
+            const SizedBox(height: 10),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 220),
+              child: Row(children: [
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.restaurant_rounded,
+                    title: 'Restaurants',
+                    caption: 'Menu · commander',
+                    color: AppColors.primaryDark,
+                    onTap: () => context.push('/client/restaurants'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.storefront_rounded,
+                    title: 'Mon restaurant',
+                    caption: 'Menu · lien à partager',
+                    color: AppColors.accent,
+                    onTap: () => context.push('/restaurant'),
+                  ),
+                ),
+              ]),
+            ),
             const SectionTitle('Services'),
             GridView.count(
               crossAxisCount: wide ? 6 : 3,

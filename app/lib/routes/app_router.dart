@@ -31,6 +31,12 @@ import '../screens/gas/gas_home_screen.dart';
 import '../screens/gas/gas_order_screen.dart';
 import '../screens/gas/gas_orders_screen.dart';
 import '../screens/gas/place_detail_screen.dart';
+import '../screens/restaurant/restaurant_form_screen.dart';
+import '../screens/restaurant/restaurant_order_screens.dart';
+import '../screens/restaurant/restaurant_owner_screens.dart';
+import '../screens/restaurant/restaurant_public_screen.dart';
+import '../screens/restaurant/restaurants_home_screen.dart';
+import '../providers/restaurant_providers.dart';
 import '../screens/vendor/vendor_screens.dart';
 import '../data/models/gas.dart';
 import '../screens/visitor/visitor_screen.dart';
@@ -56,11 +62,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final auth = ref.read(authControllerProvider);
       final path = state.matchedLocation;
+      // Lien partagé par un restaurateur : /r/<lien> (menu, public) et /r/<lien>/order (commande, compte requis)
+      final isShared = path.startsWith('/r/');
+      final isSharedOrder = isShared && path.endsWith('/order');
 
       if (auth.loading || (auth.session != null && auth.profile == null)) {
+        if (isShared && !isSharedOrder) return null; // le menu se lit sans attendre la connexion
+        if (isSharedOrder) ref.read(pendingRouteProvider.notifier).set(path);
         return path == '/splash' ? null : '/splash';
       }
       if (!auth.isSignedIn) {
+        if (isSharedOrder) {
+          ref.read(pendingRouteProvider.notifier).set(path);
+          return '/login';
+        }
+        if (isShared) return null;
         if (auth.isGuest && (path == '/visitor' || path == '/support')) return null;
         if (_publicPaths.contains(path)) return null;
         return '/welcome';
@@ -68,7 +84,10 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final role = auth.profile!.role;
       final home = homeFor(role);
-      if (path == '/splash' || path == '/visitor' || _publicPaths.contains(path)) return home;
+      if (path == '/splash' || path == '/visitor' || _publicPaths.contains(path)) {
+        // un visiteur venu d'un lien de restaurant retrouve sa page après connexion
+        return ref.read(pendingRouteProvider.notifier).take() ?? home;
+      }
       if (path.startsWith('/admin') && !role.isStaff) return home;
       if (path == '/driver' && role != UserRole.driver) return home;
       if (path.startsWith('/driver/') && role != UserRole.driver && path != '/driver/apply') return home;
@@ -110,6 +129,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/client/gas/orders/:id', builder: (_, s) => GasOrderDetailScreen(orderId: s.pathParameters['id']!)),
       GoRoute(path: '/client/gas/place/:id', builder: (_, s) => PlaceDetailScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),
       GoRoute(path: '/client/gas/order/:id', builder: (_, s) => GasOrderScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),
+
+      // Restaurants : liste, commandes
+      GoRoute(path: '/client/restaurants', builder: (_, _) => const RestaurantsHomeScreen()),
+      GoRoute(path: '/client/restaurants/orders', builder: (_, _) => const RestaurantOrdersScreen()),
+      GoRoute(path: '/client/restaurants/orders/:id', builder: (_, s) => RestaurantOrderDetailScreen(orderId: s.pathParameters['id']!)),
+
+      // Lien public d'un restaurant (visible sans compte) et commande
+      GoRoute(path: '/r/:slug', builder: (_, s) => RestaurantPublicScreen(slug: s.pathParameters['slug']!)),
+      GoRoute(path: '/r/:slug/order', builder: (_, s) => RestaurantCheckoutScreen(slug: s.pathParameters['slug']!)),
+
+      // Espace restaurateur
+      GoRoute(path: '/restaurant', builder: (_, _) => const RestaurantOwnerHomeScreen()),
+      GoRoute(path: '/restaurant/new', builder: (_, _) => const RestaurantFormScreen()),
+      GoRoute(path: '/restaurant/:id', builder: (_, s) => RestaurantManageScreen(restaurantId: s.pathParameters['id']!)),
+      GoRoute(path: '/restaurant/:id/edit', builder: (_, s) => RestaurantFormScreen(restaurantId: s.pathParameters['id'])),
+
       GoRoute(path: '/vendor', builder: (_, _) => const VendorHomeScreen()),
       GoRoute(path: '/vendor/register', builder: (_, _) => const VendorRegisterScreen()),
       GoRoute(path: '/vendor/place/:id', builder: (_, s) => VendorPlaceScreen(placeId: s.pathParameters['id']!)),

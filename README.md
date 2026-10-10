@@ -128,6 +128,19 @@ Pour publier sur le Play Store, configurez une clé de signature
 
 ---
 
+## Module Restaurants (lien partageable)
+
+Un restaurateur crée son restaurant dans l'application (**Accueil → Mon restaurant**), ajoute catégories et plats
+(photo, prix, « épuisé aujourd'hui ») et obtient un lien du type `https://telimatchi.com/#/r/chez-awa`.
+Toute personne qui ouvre ce lien voit le menu **sans compte** ; pour commander (retrait ou livraison par un livreur Telima,
+paiement en espèces) il faut se connecter, puis la page reprend là où elle était.
+
+* Client : `/client/restaurants` (liste autour de moi), `/r/<lien>` (menu), `/r/<lien>/order` (panier), `/client/restaurants/orders` (suivi).
+* Restaurateur : `/restaurant` (mes restaurants), `/restaurant/<id>` (commandes, menu, lien), interrupteur Ouvert / Fermé.
+* Administration : `/admin/restaurants` (suspendre / rétablir).
+* Base : migration `20261007010000_telima_13_restaurants.sql` (tables `restaurants`, `restaurant_menu_*`, `restaurant_orders`) ;
+  prix relus côté serveur, commande « prête » → création automatique de la livraison.
+
 ## 4. Ce qui est simulé et comment passer en réel
 
 Toutes les fonctions marchent dès maintenant. Trois services externes sont en **mode simulation**,

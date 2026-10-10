@@ -73,13 +73,13 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
       builder: (_) => SafeArea(
         child: ListView(shrinkWrap: true, children: [
           ListTile(
-            leading: const Icon(Icons.my_location_rounded),
+            leading: const Icon(Icons.my_location),
             title: const Text('Autour de ma position'),
             selected: f.cityId == null,
             onTap: () => Navigator.pop(context, ''),
           ),
           for (final c in cities)
-            ListTile(leading: const Icon(Icons.location_city_rounded), title: Text(c.name), selected: f.cityId == c.id, onTap: () => Navigator.pop(context, c.id)),
+            ListTile(leading: const Icon(Icons.location_city), title: Text(c.name), selected: f.cityId == c.id, onTap: () => Navigator.pop(context, c.id)),
         ]),
       ),
     );
@@ -148,7 +148,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
           IconButton(
             tooltip: 'Mes favoris',
             onPressed: () => context.push('/client/gas/favorites'),
-            icon: const Icon(Icons.favorite_rounded),
+            icon: const Icon(Icons.star_rounded),
           ),
           IconButton(
             tooltip: 'Mes commandes de gaz',
@@ -159,7 +159,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => setState(() => _map = !_map),
-        icon: Icon(_map ? Icons.view_list_rounded : Icons.map_rounded),
+        icon: Icon(_map ? Icons.list_alt : Icons.map_outlined),
         label: Text(_map ? 'Liste' : 'Carte'),
       ),
       body: Column(children: [
@@ -172,7 +172,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   hintText: 'Quartier, nom, enseigne…',
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  prefixIcon: const Icon(Icons.search),
                   suffixIcon: _search.text.isEmpty
                       ? null
                       : IconButton(icon: const Icon(Icons.close_rounded), onPressed: () {
@@ -189,7 +189,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
               Badge(
                 isLabelVisible: activeFilters > 0,
                 label: Text('$activeFilters'),
-                child: IconButton.filledTonal(onPressed: _filters, icon: const Icon(Icons.tune_rounded)),
+                child: IconButton.filledTonal(onPressed: _filters, icon: const Icon(Icons.tune)),
               ),
             ],
           ]),
@@ -215,7 +215,7 @@ class _GasHomeScreenState extends ConsumerState<GasHomeScreen> {
                 if (list.isEmpty) {
                   return ListView(children: [
                     const SizedBox(height: 60),
-                    Icon(stations ? Icons.local_gas_station_rounded : Icons.local_fire_department_rounded, size: 56, color: AppColors.textMuted),
+                    Icon(stations ? Icons.directions_car : Icons.inventory_2, size: 56, color: AppColors.textMuted),
                     const SizedBox(height: 12),
                     const Center(child: Text('Aucun résultat dans ce rayon', style: TextStyle(fontWeight: FontWeight.w700))),
                     const Padding(
@@ -274,7 +274,7 @@ class PlaceCard extends StatelessWidget {
           Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
             RatingBadge(avg: p.ratingAvg, count: p.ratingCount),
             if (p.hasQueue) QueueChip(place: p),
-            if (p.promoTitle != null) SmallTag(p.promoTitle!, AppColors.danger, icon: Icons.local_offer_rounded),
+            if (p.promoTitle != null) SmallTag(p.promoTitle!, AppColors.danger, icon: Icons.tag),
             if (p.boost >= 2) const SmallTag('Sponsorisé', AppColors.info) else if (p.boost == 1) const SmallTag('Recommandé', AppColors.primaryDark, icon: Icons.verified_rounded),
           ]),
           const SizedBox(height: 8),
@@ -331,7 +331,7 @@ class _PlacesMap extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(color: p.summary == Availability.unknown ? (p.isStation ? AppColors.info : AppColors.accent) : p.summary.color, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black38)]),
-                    child: Icon(p.isStation ? Icons.local_gas_station_rounded : Icons.local_fire_department_rounded, color: Colors.white, size: 20),
+                    child: Icon(p.isStation ? Icons.directions_car : Icons.inventory_2, color: Colors.white, size: 20),
                   ),
                   Icon(Icons.arrow_drop_down, color: p.summary.color, size: 18),
                 ]),
@@ -365,7 +365,7 @@ class _ZoneBar extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ActionChip(
-              avatar: Icon(city == null ? Icons.my_location_rounded : Icons.location_city_rounded, size: 18),
+              avatar: Icon(city == null ? Icons.my_location : Icons.location_city, size: 18),
               label: Text(city?.name ?? 'Ma position'),
               onPressed: onPickCity,
             ),
@@ -374,7 +374,7 @@ class _ZoneBar extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: InputChip(
-                avatar: const Icon(Icons.place_rounded, size: 18),
+                avatar: const Icon(Icons.place_outlined, size: 18),
                 label: Text(f.areaLabel ?? 'Quartier'),
                 onDeleted: onClearArea,
               ),

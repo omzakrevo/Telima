@@ -83,7 +83,7 @@ class VendorPromos extends ConsumerWidget {
     final async = ref.watch(placePromosProvider(place.id));
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(onPressed: () => _edit(context, ref), child: const Icon(Icons.add_rounded)),
+      floatingActionButton: FloatingActionButton(onPressed: () => _edit(context, ref), child: const Icon(Icons.add)),
       body: AsyncBody<List<PlacePromo>>(
         value: async,
         onRetry: () => ref.invalidate(placePromosProvider(place.id)),
@@ -128,7 +128,7 @@ class VendorPromos extends ConsumerWidget {
                           await runWithLoader(context, () => ref.read(gasRepositoryProvider).deletePromo(p.id));
                           ref.invalidate(placePromosProvider(place.id));
                         },
-                        icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+                        icon: const Icon(Icons.delete_outline, color: AppColors.danger),
                       ),
                     ]),
                   );

@@ -26,7 +26,7 @@ class VendorHomeScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Mon commerce')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/vendor/register'),
-        icon: const Icon(Icons.add_business_rounded),
+        icon: const Icon(Icons.add_business),
         label: const Text('Ajouter un point'),
       ),
       body: RefreshIndicator(
@@ -37,7 +37,7 @@ class VendorHomeScreen extends ConsumerWidget {
           builder: (list) => list.isEmpty
               ? ListView(padding: const EdgeInsets.all(24), children: const [
                   SizedBox(height: 40),
-                  Icon(Icons.storefront_rounded, size: 64, color: AppColors.primary),
+                  Icon(Icons.storefront, size: 64, color: AppColors.primary),
                   SizedBox(height: 12),
                   Text('Vendez votre gaz avec Telima', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                   SizedBox(height: 8),
@@ -158,8 +158,8 @@ class _VendorRegisterScreenState extends ConsumerState<VendorRegisterScreen> {
             child: ListView(padding: const EdgeInsets.all(16), children: [
               SegmentedButton<bool>(
                 segments: const [
-                  ButtonSegment(value: false, label: Text('Vente de gaz'), icon: Icon(Icons.local_fire_department_rounded)),
-                  ButtonSegment(value: true, label: Text('Station-service'), icon: Icon(Icons.local_gas_station_rounded)),
+                  ButtonSegment(value: false, label: Text('Vente de gaz'), icon: Icon(Icons.inventory_2)),
+                  ButtonSegment(value: true, label: Text('Station-service'), icon: Icon(Icons.directions_car)),
                 ],
                 selected: {_station},
                 onSelectionChanged: (s) => setState(() => _station = s.first),
@@ -190,7 +190,7 @@ class _VendorRegisterScreenState extends ConsumerState<VendorRegisterScreen> {
                 onChanged: (p) => setState(() => _point = p),
               ),
               const SizedBox(height: 20),
-              BigActionButton(label: 'Envoyer pour vérification', icon: Icons.send_rounded, loading: _saving, onPressed: _save),
+              BigActionButton(label: 'Envoyer pour vérification', icon: Icons.send, loading: _saving, onPressed: _save),
             ]),
           ),
         ),
@@ -274,8 +274,8 @@ class _Summary extends ConsumerWidget {
                 tile('Ventes aujourd’hui', fcfa(d['sales_today']), Icons.payments_rounded, AppColors.primary),
                 tile('Commandes en attente', '${d['pending'] ?? 0}', Icons.hourglass_top_rounded, AppColors.accent),
                 tile('Livraisons en cours', '${d['in_delivery'] ?? 0}', Icons.delivery_dining_rounded, AppColors.info),
-                tile('Stock disponible', '${d['stock'] ?? 0}', Icons.inventory_2_rounded, AppColors.primary),
-                tile('Produits en rupture', '${d['out_of_stock'] ?? 0}', Icons.warning_rounded, AppColors.danger),
+                tile('Stock disponible', '${d['stock'] ?? 0}', Icons.inventory_2, AppColors.primary),
+                tile('Produits en rupture', '${d['out_of_stock'] ?? 0}', Icons.warning_amber_rounded, AppColors.danger),
               ],
             ),
           ]);
@@ -325,7 +325,7 @@ class _Orders extends ConsumerWidget {
                       Text('${o.isDelivery ? 'Livraison : ${o.dropoffAddress ?? ''}' : 'Retrait sur place'} · ${fcfa(o.total)}', style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
                       const SizedBox(height: 8),
                       Wrap(spacing: 8, runSpacing: 8, children: [
-                        OutlinedButton.icon(onPressed: () => callPhone(o.customerPhone), icon: const Icon(Icons.call_rounded, size: 18), label: const Text('Client')),
+                        OutlinedButton.icon(onPressed: () => callPhone(o.customerPhone), icon: const Icon(Icons.call, size: 18), label: const Text('Client')),
                         if (o.status == 'sent') ...[
                           FilledButton(onPressed: () => _act(context, ref, o, 'accept', ok: 'Commande acceptée'), child: const Text('Accepter')),
                           OutlinedButton(
@@ -436,7 +436,7 @@ class _Products extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(onPressed: () => _edit(context, ref), child: const Icon(Icons.add_rounded)),
+      floatingActionButton: FloatingActionButton(onPressed: () => _edit(context, ref), child: const Icon(Icons.add)),
       body: place.products.isEmpty
           ? const Center(child: Text('Ajoutez vos bouteilles avec le bouton +', style: TextStyle(color: AppColors.textMuted)))
           : ListView.separated(
@@ -463,7 +463,7 @@ class _Products extends ConsumerWidget {
                         await runWithLoader(context, () => ref.read(gasRepositoryProvider).deleteProduct(p.id));
                         ref.invalidate(myPlacesProvider);
                       },
-                      icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+                      icon: const Icon(Icons.delete_outline, color: AppColors.danger),
                     ),
                   ]),
                 );

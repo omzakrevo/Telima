@@ -26,7 +26,7 @@ class GasOrdersScreen extends ConsumerWidget {
           builder: (list) => list.isEmpty
               ? ListView(children: const [
                   SizedBox(height: 80),
-                  Icon(Icons.local_fire_department_rounded, size: 56, color: AppColors.textMuted),
+                  Icon(Icons.inventory_2, size: 56, color: AppColors.textMuted),
                   SizedBox(height: 12),
                   Center(child: Text('Aucune commande de gaz', style: TextStyle(fontWeight: FontWeight.w700))),
                 ])
@@ -109,7 +109,7 @@ class GasOrderDetailScreen extends ConsumerWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 5),
                         child: Row(children: [
-                          Icon(i <= idx ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                          Icon(i <= idx ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
                               color: i <= idx ? AppColors.primary : AppColors.line, size: 26),
                           const SizedBox(width: 12),
                           Text(s.$2, style: TextStyle(fontWeight: i == idx ? FontWeight.w800 : FontWeight.w500, color: i > idx ? AppColors.textMuted : null)),
@@ -132,14 +132,14 @@ class GasOrderDetailScreen extends ConsumerWidget {
                   if (o.deliveryId != null && o.isOpen)
                     BigActionButton(label: 'SUIVRE MON LIVREUR', icon: Icons.delivery_dining_rounded, onPressed: () => context.push('/client/delivery/${o.deliveryId}')),
                   if (!o.isDelivery && o.placePosition != null && o.isOpen) ...[
-                    BigActionButton(label: 'ITINÉRAIRE', icon: Icons.directions_rounded, onPressed: () => openNavigation(o.placePosition!)),
+                    BigActionButton(label: 'ITINÉRAIRE', icon: Icons.navigation, onPressed: () => openNavigation(o.placePosition!)),
                   ],
                   if (o.placePhone != null && o.placePhone!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
                       onPressed: () => callPhone(o.placePhone!),
-                      icon: const Icon(Icons.call_rounded),
+                      icon: const Icon(Icons.call),
                       label: const Text('APPELER LE VENDEUR'),
                     ),
                   ],

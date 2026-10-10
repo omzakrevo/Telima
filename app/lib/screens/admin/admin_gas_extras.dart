@@ -126,7 +126,7 @@ class AdminReviewsTab extends ConsumerWidget {
                   subtitle: Text('${(r['users'] as Map?)?['full_name'] ?? ''}${r['comment'] == null ? '' : ' : ${r['comment']}'}'),
                   trailing: IconButton(
                     tooltip: 'Supprimer',
-                    icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+                    icon: const Icon(Icons.delete_outline, color: AppColors.danger),
                     onPressed: () async {
                       await runWithLoader(context, () => ref.read(gasRepositoryProvider).adminDeleteReview('${r['id']}'), success: 'Avis supprimé');
                       ref.invalidate(_adminReviewsProvider);

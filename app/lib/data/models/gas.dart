@@ -7,9 +7,9 @@ import 'json.dart';
 /// Disponibilité d'un produit ou d'un carburant.
 enum Availability {
   available('Disponible', AppColors.primary, Icons.check_circle_rounded),
-  low('Stock faible', AppColors.accent, Icons.error_rounded),
-  out('Rupture', AppColors.danger, Icons.cancel_rounded),
-  unknown('Non renseigné', AppColors.textMuted, Icons.help_rounded);
+  low('Stock faible', AppColors.accent, Icons.info_outline),
+  out('Rupture', AppColors.danger, Icons.cancel),
+  unknown('Non renseigné', AppColors.textMuted, Icons.info_outline);
 
   const Availability(this.label, this.color, this.icon);
   final String label;

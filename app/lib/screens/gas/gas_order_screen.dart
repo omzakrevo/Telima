@@ -147,18 +147,18 @@ class _GasOrderScreenState extends ConsumerState<GasOrderScreen> {
                 ),
                 IconButton.filledTonal(
                   onPressed: (_qty[p.id] ?? 0) > 0 ? () => setState(() => _qty[p.id] = (_qty[p.id] ?? 0) - 1) : null,
-                  icon: const Icon(Icons.remove_rounded),
+                  icon: const Icon(Icons.remove),
                 ),
                 SizedBox(width: 28, child: Text('${_qty[p.id] ?? 0}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800))),
                 IconButton.filled(
                   onPressed: (_qty[p.id] ?? 0) < 10 ? () => setState(() => _qty[p.id] = (_qty[p.id] ?? 0) + 1) : null,
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(Icons.add),
                 ),
               ]),
             ),
           const SectionTitle('Comment la recevoir ?'),
           Row(children: [
-            Expanded(child: _ModeCard(icon: Icons.storefront_rounded, title: 'Retrait', caption: 'Sur place', selected: _mode == 'pickup', onTap: () => setState(() => _mode = 'pickup'))),
+            Expanded(child: _ModeCard(icon: Icons.storefront, title: 'Retrait', caption: 'Sur place', selected: _mode == 'pickup', onTap: () => setState(() => _mode = 'pickup'))),
             const SizedBox(width: 10),
             Expanded(
               child: _ModeCard(

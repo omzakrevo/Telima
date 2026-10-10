@@ -31,6 +31,15 @@ void openNotification(BuildContext context, WidgetRef ref, AppNotification n) {
     context.push('/admin/finance');
   } else if (n.type == 'password_reset' && (role?.isStaff ?? false)) {
     context.push('/admin/support');
+  } else if (n.type == 'restaurant_order_new' || n.type == 'restaurant_new' || n.type == 'restaurant_status') {
+    final id = n.data['restaurant_id']?.toString();
+    if (n.type == 'restaurant_new' && (role?.isStaff ?? false)) {
+      context.push('/admin/restaurants');
+    } else if (id != null) {
+      context.push('/restaurant/$id');
+    }
+  } else if (n.type.startsWith('restaurant_order') && n.data['restaurant_order_id'] != null) {
+    context.push('/client/restaurants/orders/${n.data['restaurant_order_id']}');
   } else if (n.deliveryId != null) {
     context.push(deliveryRouteFor(role, n.deliveryId!));
   }

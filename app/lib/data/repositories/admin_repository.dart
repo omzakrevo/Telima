@@ -173,6 +173,18 @@ class AdminRepository {
   Future<void> setUserRole(String id, UserRole role) =>
       _client.rpc('admin_set_user_role', params: {'p_user_id': id, 'p_role': role.name});
 
+  /// Ce qui bloque ou accompagne la suppression définitive d'un compte.
+  Future<Map<String, dynamic>> deleteUserCheck(String id) async =>
+      Map<String, dynamic>.from(await _client.rpc('admin_delete_user_check', params: {'p_user_id': id}) as Map);
+
+  /// Suppression définitive (compte, profil, portefeuille, restaurants…). Irréversible.
+  Future<void> deleteUser(String id, {bool force = false}) =>
+      _client.rpc('admin_delete_user', params: {'p_user_id': id, 'p_force': force});
+
+  /// Connexions par jour : {days: [{day, active, clients, drivers}], total_users, active_today, active_7d, active_30d}.
+  Future<Map<String, dynamic>> activity(int days) async =>
+      Map<String, dynamic>.from(await _client.rpc('admin_activity', params: {'p_days': days}) as Map);
+
   // ---- Paiements & retraits ----
   Future<List<Withdrawal>> withdrawals({WithdrawalStatus? status}) async {
     var q = _client.from('withdrawals').select('*, users!withdrawals_user_id_fkey(full_name, phone)');

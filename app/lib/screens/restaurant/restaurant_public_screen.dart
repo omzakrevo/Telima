@@ -9,6 +9,7 @@ import '../../data/models/restaurant.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/restaurant_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/motion.dart';
 import 'restaurant_widgets.dart';
 
 /// Page publique d'un restaurant (lien partagé) : visible SANS compte ; la commande demande de se connecter.
@@ -135,14 +136,14 @@ class _Content extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 SectionTitle(s.name),
-                for (final item in s.items)
-                  _ItemTile(
-                    item: item,
-                    orderable: r.acceptingOrders && item.isAvailable,
-                    qty: cart.restaurantId == r.id ? cart.quantityOf(item.id) : 0,
-                    onAdd: () => ref.read(cartProvider.notifier).add(r.id, item.id),
-                    onRemove: () => ref.read(cartProvider.notifier).remove(item.id),
-                  ),
+                for (final entry in s.items.asMap().entries)
+                  FadeSlideIn.staggered(index: entry.key.clamp(0, 8), child: _ItemTile(
+                    item: entry.value,
+                    orderable: r.acceptingOrders && entry.value.isAvailable,
+                    qty: cart.restaurantId == r.id ? cart.quantityOf(entry.value.id) : 0,
+                    onAdd: () => ref.read(cartProvider.notifier).add(r.id, entry.value.id),
+                    onRemove: () => ref.read(cartProvider.notifier).remove(entry.value.id),
+                  )),
               ]),
             ),
         ]),

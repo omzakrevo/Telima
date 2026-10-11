@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -65,6 +66,7 @@ class AuthController extends Notifier<AuthSnapshot> {
       }
       state = AuthSnapshot(session: session, profile: profile);
       unawaited(ref.read(pushServiceProvider).start(profile.id));
+      unawaited(_touchActivity(profile.id));
     } catch (_) {
       // Hors connexion : on garde la session, le profil sera rechargé au retour du réseau.
       final cached = ref.read(cacheProvider).get<Map>('profile:${session.user.id}');
@@ -80,6 +82,18 @@ class AuthController extends Notifier<AuthSnapshot> {
       return;
     }
     await ref.read(cacheProvider).put('profile:${session.user.id}', state.profile!.toJson());
+  }
+
+  /// Compte la connexion du jour (une seule fois par jour et par appareil, silencieux en cas d'erreur).
+  Future<void> _touchActivity(String userId) async {
+    try {
+      final day = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+      final key = 'activity:$userId';
+      final cache = ref.read(cacheProvider);
+      if (cache.get<String>(key) == day) return;
+      await ref.read(authRepositoryProvider).touchActivity(kIsWeb ? 'web' : defaultTargetPlatform.name);
+      await cache.put(key, day);
+    } catch (_) {}
   }
 
   Future<void> refreshProfile() async {

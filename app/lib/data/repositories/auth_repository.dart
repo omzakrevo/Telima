@@ -52,6 +52,9 @@ class AuthRepository {
 
   Future<void> signOut() => _client.auth.signOut();
 
+  /// Enregistre « cet utilisateur s'est connecté aujourd'hui » (statistiques de l'administrateur).
+  Future<void> touchActivity(String platform) => _client.rpc('touch_activity', params: {'p_platform': platform});
+
   Future<void> changePassword(String newPassword) async {
     await _client.auth.updateUser(UserAttributes(password: newPassword));
   }

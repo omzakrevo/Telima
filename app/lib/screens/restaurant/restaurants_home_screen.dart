@@ -7,6 +7,7 @@ import '../../core/utils/formatters.dart';
 import '../../data/models/restaurant.dart';
 import '../../providers/restaurant_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/motion.dart';
 import 'restaurant_widgets.dart';
 
 /// Restaurants autour de moi : recherche par nom, cuisine, quartier ou plat.
@@ -90,7 +91,7 @@ class _RestaurantsHomeScreenState extends ConsumerState<RestaurantsHomeScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                         itemCount: list.length,
                         separatorBuilder: (_, _) => const SizedBox(height: 10),
-                        itemBuilder: (_, i) => _RestaurantCard(restaurant: list[i]),
+                        itemBuilder: (_, i) => FadeSlideIn.staggered(index: i.clamp(0, 6), child: _RestaurantCard(restaurant: list[i])),
                       ),
               ),
             ),

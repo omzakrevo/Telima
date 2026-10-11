@@ -193,9 +193,9 @@ class AdminDashboardScreen extends ConsumerWidget {
                 crossAxisSpacing: 12,
                 childAspectRatio: cols >= 4 ? 1.9 : 1.4,
                 children: [
-                  FadeSlideIn.staggered(index: 1, child: StatCard(label: 'Connectés aujourd’hui', value: '${a['active_today']}', icon: Icons.login_rounded, image: Ico3D.people, color: AppColors.primary)),
-                  FadeSlideIn.staggered(index: 2, child: StatCard(label: 'Connectés sur 7 jours', value: '${a['active_7d']}', icon: Icons.calendar_view_week_rounded, image: Ico3D.people, color: AppColors.ink)),
-                  FadeSlideIn.staggered(index: 3, child: StatCard(label: 'Connectés sur 30 jours', value: '${a['active_30d']}', icon: Icons.calendar_month_rounded, image: Ico3D.people, color: AppColors.ink)),
+                  FadeSlideIn.staggered(index: 1, child: StatCard(label: 'Connectés aujourd’hui', value: '${a['active_today']}', icon: Icons.people_alt_rounded, image: Ico3D.people, color: AppColors.primary)),
+                  FadeSlideIn.staggered(index: 2, child: StatCard(label: 'Connectés sur 7 jours', value: '${a['active_7d']}', icon: Icons.groups_rounded, image: Ico3D.people, color: AppColors.ink)),
+                  FadeSlideIn.staggered(index: 3, child: StatCard(label: 'Connectés sur 30 jours', value: '${a['active_30d']}', icon: Icons.groups_rounded, image: Ico3D.people, color: AppColors.ink)),
                   FadeSlideIn.staggered(index: 4, child: StatCard(label: 'Comptes inscrits', value: '${a['total_users']}', icon: Icons.groups_rounded, image: Ico3D.people, color: AppColors.ink, onTap: () => context.go('/admin/users'))),
                 ],
               ),

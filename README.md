@@ -128,10 +128,15 @@ Pour publier sur le Play Store, configurez une clé de signature
 
 ---
 
+## Module Boutiques (vêtements, chaussures, accessoires)
+
+Même principe que les restaurants : **Accueil → Ma boutique**, catalogue d'articles avec tailles, couleurs et stock, lien
+`https://telimatchi.com/b/mode-d-awa`, commande directe (retrait ou livraison Telima). Détails : [docs/module-boutiques.md](docs/module-boutiques.md).
+
 ## Module Restaurants (lien partageable)
 
 Un restaurateur crée son restaurant dans l'application (**Accueil → Mon restaurant**), ajoute catégories et plats
-(photo, prix, « épuisé aujourd'hui ») et obtient un lien du type `https://telimatchi.com/#/r/chez-awa`.
+(photo, prix, « épuisé aujourd'hui ») et obtient un lien du type `https://telimatchi.com/r/chez-awa`.
 Toute personne qui ouvre ce lien voit le menu **sans compte** ; pour commander (retrait ou livraison par un livreur Telima,
 paiement en espèces) il faut se connecter, puis la page reprend là où elle était.
 

@@ -40,6 +40,15 @@ void openNotification(BuildContext context, WidgetRef ref, AppNotification n) {
     }
   } else if (n.type.startsWith('restaurant_order') && n.data['restaurant_order_id'] != null) {
     context.push('/client/restaurants/orders/${n.data['restaurant_order_id']}');
+  } else if (n.type == 'shop_order_new' || n.type == 'shop_new' || n.type == 'shop_status') {
+    final id = n.data['shop_id']?.toString();
+    if (n.type == 'shop_new' && (role?.isStaff ?? false)) {
+      context.push('/admin/shops');
+    } else if (id != null) {
+      context.push('/shop/$id');
+    }
+  } else if (n.type.startsWith('shop_order') && n.data['shop_order_id'] != null) {
+    context.push('/client/shops/orders/${n.data['shop_order_id']}');
   } else if (n.deliveryId != null) {
     context.push(deliveryRouteFor(role, n.deliveryId!));
   }

@@ -17,6 +17,7 @@ import 'admin_orders_screens.dart';
 import 'admin_payments_screen.dart';
 import 'admin_push_screen.dart';
 import 'admin_restaurants_screen.dart';
+import 'admin_shops_screen.dart';
 import 'admin_releases_screen.dart';
 import 'admin_users_screen.dart';
 
@@ -37,6 +38,7 @@ const _items = [
   _NavItem('/admin/users', 'Utilisateurs', Icons.people_outline),
   _NavItem('/admin/gas', 'Gaz & carburant', Icons.inventory_2_outlined),
   _NavItem('/admin/restaurants', 'Restaurants', Icons.restaurant_outlined),
+  _NavItem('/admin/shops', 'Boutiques', Icons.storefront_outlined),
   _NavItem('/admin/payments', 'Paiements à vérifier', Icons.fact_check_outlined, adminOnly: true),
   _NavItem('/admin/finance', 'Paiements & retraits', Icons.payments_outlined),
   _NavItem('/admin/pricing', 'Tarifs', Icons.price_change_outlined, adminOnly: true),
@@ -67,6 +69,7 @@ ShellRoute adminShellRoute() => ShellRoute(
         GoRoute(path: '/admin/push', builder: (_, _) => const AdminPushScreen()),
         GoRoute(path: '/admin/gas', builder: (_, _) => const AdminGasScreen()),
         GoRoute(path: '/admin/restaurants', builder: (_, _) => const AdminRestaurantsScreen()),
+        GoRoute(path: '/admin/shops', builder: (_, _) => const AdminShopsScreen()),
         GoRoute(path: '/admin/payments', builder: (_, _) => const AdminPaymentsScreen()),
         GoRoute(path: '/admin/support', builder: (_, _) => const AdminSupportScreen()),
         GoRoute(path: '/admin/logs', builder: (_, _) => const AdminLogsScreen()),

@@ -67,7 +67,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Liens restaurants partagés : https://telimatchi.com/r/<slug> ouvre l'app sans passer par le navigateur
+            <!-- Liens partagés : https://telimatchi.com/r/<slug> (restaurant) et /b/<slug> (boutique) ouvrent l'app sans passer par le navigateur
                  (vérifié par https://telimatchi.com/.well-known/assetlinks.json) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
@@ -77,6 +77,7 @@
                 <data android:host="telimatchi.com"/>
                 <data android:host="www.telimatchi.com"/>
                 <data android:pathPrefix="/r/"/>
+                <data android:pathPrefix="/b/"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

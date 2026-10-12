@@ -171,12 +171,12 @@ class _AdminUsersScreenState extends ConsumerState<AdminUsersScreen> {
                 const Text('Cette suppression est définitive et ne peut pas être annulée.', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.danger)),
                 const SizedBox(height: 10),
                 const Text('Seront supprimés : le compte, le profil, la fiche livreur, le portefeuille, les adresses, les notifications et, '
-                    'le cas échéant, ses restaurants, ses points de vente et ses commandes.'),
+                    'le cas échéant, ses restaurants, ses boutiques, ses points de vente et ses commandes.'),
                 const SizedBox(height: 8),
                 Text('L’historique de ses ${chk['deliveries_total'] ?? 0} livraison(s) est conservé, sans lien avec le compte.'),
-                if (((chk['restaurants'] as num?) ?? 0) > 0 || ((chk['places'] as num?) ?? 0) > 0) ...[
+                if (((chk['restaurants'] as num?) ?? 0) > 0 || ((chk['shops'] as num?) ?? 0) > 0 || ((chk['places'] as num?) ?? 0) > 0) ...[
                   const SizedBox(height: 8),
-                  Text('Également supprimés : ${chk['restaurants'] ?? 0} restaurant(s) et ${chk['places'] ?? 0} point(s) de vente.',
+                  Text('Également supprimés : ${chk['restaurants'] ?? 0} restaurant(s), ${chk['shops'] ?? 0} boutique(s) et ${chk['places'] ?? 0} point(s) de vente.',
                       style: const TextStyle(fontWeight: FontWeight.w600)),
                 ],
                 if (blockers.isNotEmpty) ...[

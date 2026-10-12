@@ -37,6 +37,11 @@ import '../screens/restaurant/restaurant_owner_screens.dart';
 import '../screens/restaurant/restaurant_public_screen.dart';
 import '../screens/restaurant/restaurants_home_screen.dart';
 import '../providers/restaurant_providers.dart';
+import '../screens/shop/shop_form_screen.dart';
+import '../screens/shop/shop_order_screens.dart';
+import '../screens/shop/shop_owner_screens.dart';
+import '../screens/shop/shop_public_screen.dart';
+import '../screens/shop/shops_home_screen.dart';
 import '../screens/vendor/vendor_screens.dart';
 import '../data/models/gas.dart';
 import '../screens/visitor/visitor_screen.dart';
@@ -63,7 +68,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authControllerProvider);
       final path = state.matchedLocation;
       // Lien partagé par un restaurateur : /r/<lien> (menu, public) et /r/<lien>/order (commande, compte requis)
-      final isShared = path.startsWith('/r/');
+      final isShared = path.startsWith('/r/') || path.startsWith('/b/'); // /b/<lien> = boutique
       final isSharedOrder = isShared && path.endsWith('/order');
 
       if (auth.loading || (auth.session != null && auth.profile == null)) {
@@ -144,6 +149,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/restaurant/new', builder: (_, _) => const RestaurantFormScreen()),
       GoRoute(path: '/restaurant/:id', builder: (_, s) => RestaurantManageScreen(restaurantId: s.pathParameters['id']!)),
       GoRoute(path: '/restaurant/:id/edit', builder: (_, s) => RestaurantFormScreen(restaurantId: s.pathParameters['id'])),
+
+      // Boutiques (vêtements, chaussures, accessoires…) : même principe que les restaurants
+      GoRoute(path: '/client/shops', builder: (_, _) => const ShopsHomeScreen()),
+      GoRoute(path: '/client/shops/orders', builder: (_, _) => const ShopOrdersScreen()),
+      GoRoute(path: '/client/shops/orders/:id', builder: (_, s) => ShopOrderDetailScreen(orderId: s.pathParameters['id']!)),
+      GoRoute(path: '/b/:slug', builder: (_, s) => ShopPublicScreen(slug: s.pathParameters['slug']!)),
+      GoRoute(path: '/b/:slug/order', builder: (_, s) => ShopCheckoutScreen(slug: s.pathParameters['slug']!)),
+      GoRoute(path: '/shop', builder: (_, _) => const ShopOwnerHomeScreen()),
+      GoRoute(path: '/shop/new', builder: (_, _) => const ShopFormScreen()),
+      GoRoute(path: '/shop/:id', builder: (_, s) => ShopManageScreen(shopId: s.pathParameters['id']!)),
+      GoRoute(path: '/shop/:id/edit', builder: (_, s) => ShopFormScreen(shopId: s.pathParameters['id'])),
 
       GoRoute(path: '/vendor', builder: (_, _) => const VendorHomeScreen()),
       GoRoute(path: '/vendor/register', builder: (_, _) => const VendorRegisterScreen()),

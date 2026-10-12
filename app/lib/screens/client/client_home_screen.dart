@@ -221,6 +221,31 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
               ]),
             ),
+            const SizedBox(height: 10),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 260),
+              child: Row(children: [
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.checkroom_rounded,
+                    title: 'Boutiques',
+                    caption: 'Vêtements · commander',
+                    color: AppColors.info,
+                    onTap: () => context.push('/client/shops'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.add_business_rounded,
+                    title: 'Ma boutique',
+                    caption: 'Catalogue · lien à partager',
+                    color: AppColors.primary,
+                    onTap: () => context.push('/shop'),
+                  ),
+                ),
+              ]),
+            ),
             const SectionTitle('Services'),
             GridView.count(
               crossAxisCount: wide ? 6 : 3,

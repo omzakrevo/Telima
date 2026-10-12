@@ -29,8 +29,10 @@ class ShopPublicScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(shop?.name ?? 'Boutique'),
         actions: [
-          if (shop != null)
+          if (shop != null) ...[
+            IconButton(tooltip: 'QR code', icon: const Icon(Icons.qr_code_2_rounded), onPressed: () => showShopQr(context, shop)),
             IconButton(tooltip: 'Partager', icon: const Icon(Icons.share_rounded), onPressed: () => shareShopLink(context, shop)),
+          ],
           if (!signedIn)
             TextButton(
               onPressed: () {

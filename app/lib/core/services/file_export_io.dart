@@ -11,3 +11,10 @@ Future<void> exportTextFile(String filename, String content, {String mimeType = 
   await file.writeAsBytes([0xEF, 0xBB, 0xBF, ...utf8.encode(content)]);
   await SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: mimeType)], subject: filename));
 }
+
+Future<void> exportBytesFile(String filename, List<int> bytes, {String mimeType = 'image/png'}) async {
+  final dir = await getTemporaryDirectory();
+  final file = File('${dir.path}/$filename');
+  await file.writeAsBytes(bytes);
+  await SharePlus.instance.share(ShareParams(files: [XFile(file.path, mimeType: mimeType)], subject: filename));
+}

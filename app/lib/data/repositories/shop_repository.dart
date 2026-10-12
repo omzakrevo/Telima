@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -119,6 +120,34 @@ class ShopRepository {
     return _storage.uploadXFile('boutiques', file);
   }
 
+  /// Choisit une courte vidéo (30 Mo maximum), l'envoie et renvoie son chemin.
+  Future<String?> pickAndUploadVideo() async {
+    final picked = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: const ['mp4', 'webm', 'mov']);
+    if (picked.isEmpty) return null;
+    final f = picked.first;
+    final size = await f.length() ?? 0;
+    if (size > 30 * 1024 * 1024) {
+      throw Exception('Vidéo trop lourde (${(size / 1048576).toStringAsFixed(1)} Mo, 30 Mo maximum). Choisissez une vidéo plus courte.');
+    }
+    final name = f.name.toLowerCase();
+    final ext = name.endsWith('.webm') ? 'webm' : (name.endsWith('.mov') ? 'mov' : 'mp4');
+    final type = ext == 'webm' ? 'video/webm' : (ext == 'mov' ? 'video/quicktime' : 'video/mp4');
+    return _storage.uploadBytes('boutiques', await f.readAsBytes(), ext: ext, contentType: type);
+  }
+
+  // ----- Notes et avis -----
+
+  Future<List<ShopReview>> reviews(String shopId, {String? productId}) async {
+    final rows = await _client.rpc('shop_reviews_list', params: {'p_shop': shopId, 'p_product': productId});
+    return [for (final r in (rows as List)) ShopReview(Map<String, dynamic>.from(r as Map))];
+  }
+
+  Future<void> rate(String shopId, {String? productId, required int rating, String? comment}) =>
+      _client.rpc('rate_shop', params: {'p_shop': shopId, 'p_product': productId, 'p_rating': rating, 'p_comment': comment});
+
+  Future<void> deleteMyReview(String shopId, {String? productId}) =>
+      _client.rpc('delete_my_shop_review', params: {'p_shop': shopId, 'p_product': productId});
+
   Future<void> saveCategory({String? id, required String shopId, required String name, int sortOrder = 0}) async {
     final row = {'shop_id': shopId, 'name': name.trim(), 'sort_order': sortOrder};
     if (id == null) {
@@ -138,6 +167,8 @@ class ShopRepository {
     String? description,
     required int price,
     String? photoPath,
+    List<String> photos = const [],
+    String? videoPath,
     bool isAvailable = true,
     List<String> sizes = const [],
     List<String> colors = const [],
@@ -151,6 +182,8 @@ class ShopRepository {
       'description': (description ?? '').trim().isEmpty ? null : description!.trim(),
       'price': price,
       'photo_path': photoPath,
+      'photos': photos,
+      'video_path': videoPath,
       'is_available': isAvailable,
       'sizes': sizes,
       'colors': colors,

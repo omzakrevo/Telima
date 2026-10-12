@@ -10,6 +10,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/shop_providers.dart';
 import '../../widgets/common.dart';
 import '../../widgets/motion.dart';
+import 'shop_product_screen.dart';
 import 'shop_widgets.dart';
 
 /// Page publique d'une boutique (lien partagé) : visible SANS compte ; la commande demande de se connecter.
@@ -103,6 +104,8 @@ class _Content extends ConsumerWidget {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(r.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                     if (r.subtitle.isNotEmpty) Text(r.subtitle, style: const TextStyle(color: AppColors.textMuted)),
+                    const SizedBox(height: 2),
+                    RatingDisplay(rating: r.ratingAvg, count: r.ratingCount),
                   ]),
                 ),
               ]),
@@ -141,22 +144,16 @@ class _Content extends ConsumerWidget {
                     item: entry.value,
                     orderable: r.acceptingOrders && entry.value.inStock,
                     qty: cart.shopId == r.id ? cart.quantityOf(entry.value.id) : 0,
-                    onAdd: () async {
-                      final item = entry.value;
-                      String? size;
-                      String? color;
-                      if (item.needsChoice) {
-                        final v = await pickShopVariant(context, item);
-                        if (v == null) return;
-                        size = v.size;
-                        color = v.color;
-                      }
-                      ref.read(cartProvider.notifier).add(r.id, item.id, size: size, color: color, maxQty: item.stock);
-                    },
+                    onOpen: () => openShopProduct(context, r, entry.value),
+                    onAdd: () => addShopItemToCart(context, ref, r, entry.value),
                     onRemove: () => ref.read(cartProvider.notifier).removeOneOf(entry.value.id),
                   )),
               ]),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+            child: ShopReviewsSection(shop: r, title: 'Avis sur la boutique'),
+          ),
         ]),
       ),
     ]);
@@ -184,17 +181,21 @@ class _Line extends StatelessWidget {
 }
 
 class _ItemTile extends StatelessWidget {
-  const _ItemTile({required this.item, required this.orderable, required this.qty, required this.onAdd, required this.onRemove});
+  const _ItemTile({required this.item, required this.orderable, required this.qty, required this.onOpen, required this.onAdd, required this.onRemove});
   final ShopProduct item;
   final bool orderable;
   final int qty;
+  final VoidCallback onOpen;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) => Opacity(
         opacity: item.inStock ? 1 : 0.55,
-        child: Container(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onOpen,
+          child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.line)),
@@ -222,6 +223,8 @@ class _ItemTile extends StatelessWidget {
                 Row(children: [
                   Text(fcfa(item.price), style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w800)),
                   if (item.lowStock) ...[const SizedBox(width: 8), ShopInfoTag('Plus que ${item.stock}', color: AppColors.accent)],
+                  if (item.ratingCount > 0) ...[const SizedBox(width: 8), RatingDisplay(rating: item.ratingAvg, count: item.ratingCount, size: 14)],
+                  if (item.galleryPaths.length > 1 || item.videoPath != null) ...[const SizedBox(width: 8), const Icon(Icons.photo_library_outlined, size: 16, color: AppColors.textMuted)],
                 ]),
               ]),
             ),
@@ -231,6 +234,7 @@ class _ItemTile extends StatelessWidget {
             else if (orderable)
               ShopQtyStepper(qty: qty, onAdd: onAdd, onRemove: onRemove),
           ]),
+        ),
         ),
       );
 }

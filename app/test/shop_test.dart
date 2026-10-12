@@ -215,4 +215,34 @@ void main() {
     expect(o.items.first.variant, 'Taille M · Rouge');
     expect(o.items.last.text, '1 × Foulard');
   });
+
+  test('un article lit ses photos, sa vidéo et sa note', () {
+    final j = _shopJson();
+    final first = (j['items'] as List)[0] as Map;
+    first['photo_path'] = 'u/1.jpg';
+    first['photos'] = ['u/2.jpg', 'u/1.jpg', 'u/3.jpg'];
+    first['video_path'] = 'u/v.mp4';
+    first['rating_avg'] = 4.5;
+    first['rating_count'] = 2;
+    j['rating_avg'] = 3.5;
+    j['rating_count'] = 4;
+    final shop = Shop(j);
+    final robe = shop.items.first;
+    expect(robe.galleryPaths, ['u/1.jpg', 'u/2.jpg', 'u/3.jpg']);
+    expect(robe.videoUrl, contains('/telima-boutiques/u/v.mp4'));
+    expect(robe.ratingAvg, 4.5);
+    expect(robe.ratingCount, 2);
+    expect(shop.ratingAvg, 3.5);
+    expect(shop.ratingCount, 4);
+    expect(shop.items[1].galleryPaths, isEmpty);
+    expect(shop.items[1].ratingCount, 0);
+  });
+
+  test('un avis est lu depuis la réponse du serveur', () {
+    final r = ShopReview({'id': 'r1', 'rating': 5, 'comment': 'Superbe', 'author': 'Awa', 'created_at': '2026-10-12T10:00:00Z', 'mine': true});
+    expect(r.rating, 5);
+    expect(r.author, 'Awa');
+    expect(r.mine, isTrue);
+    expect(r.createdAt, isNotNull);
+  });
 }

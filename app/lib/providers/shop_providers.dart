@@ -23,6 +23,10 @@ final nearbyShopsProvider = FutureProvider.autoDispose.family<List<Shop>, String
   return near.isNotEmpty || query.trim().isNotEmpty ? near : repo.search(lat: pos.latitude, lng: pos.longitude, maxKm: 150);
 });
 
+/// Avis d'une boutique (productId null) ou d'un article : (shopId, productId).
+final shopReviewsProvider = FutureProvider.autoDispose.family<List<ShopReview>, (String, String?)>(
+    (ref, k) => ref.watch(shopRepositoryProvider).reviews(k.$1, productId: k.$2));
+
 final myShopOrdersProvider = FutureProvider.autoDispose<List<ShopOrder>>((ref) => ref.watch(shopRepositoryProvider).myOrders());
 final shopOrderProvider =
     FutureProvider.autoDispose.family<ShopOrder, String>((ref, id) => ref.watch(shopRepositoryProvider).order(id));

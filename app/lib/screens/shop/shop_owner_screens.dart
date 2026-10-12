@@ -490,7 +490,8 @@ class _ItemEditorState extends ConsumerState<_ItemEditor> {
   late final _colors = TextEditingController(text: widget.item?.colors.join(', ') ?? '');
   late final _stock = TextEditingController(text: widget.item?.stock == null ? '' : '${widget.item!.stock}');
   late String? _categoryId = widget.item?.categoryId;
-  late String? _photoPath = widget.item?.photoPath;
+  late final List<String> _photos = [...?widget.item?.galleryPaths];
+  late String? _videoPath = widget.item?.videoPath;
   late bool _available = widget.item?.isAvailable ?? true;
   bool _saving = false;
   bool _uploading = false;
@@ -507,10 +508,26 @@ class _ItemEditorState extends ConsumerState<_ItemEditor> {
   }
 
   Future<void> _pickPhoto() async {
+    if (_photos.length >= 8) {
+      showError(context, Exception('8 photos maximum par article.'));
+      return;
+    }
     setState(() => _uploading = true);
     try {
-      final path = await ref.read(shopRepositoryProvider).pickAndUploadPhoto(maxWidth: 800);
-      if (path != null && mounted) setState(() => _photoPath = path);
+      final path = await ref.read(shopRepositoryProvider).pickAndUploadPhoto(maxWidth: 1280);
+      if (path != null && mounted) setState(() => _photos.add(path));
+    } catch (e) {
+      if (mounted) showError(context, e);
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    setState(() => _uploading = true);
+    try {
+      final path = await ref.read(shopRepositoryProvider).pickAndUploadVideo();
+      if (path != null && mounted) setState(() => _videoPath = path);
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -539,7 +556,9 @@ class _ItemEditorState extends ConsumerState<_ItemEditor> {
             name: _name.text,
             description: _description.text,
             price: int.parse(_price.text.replaceAll(' ', '')),
-            photoPath: _photoPath,
+            photoPath: _photos.isEmpty ? null : _photos.first,
+            photos: _photos.length > 1 ? _photos.sublist(1) : const [],
+            videoPath: _videoPath,
             isAvailable: _available,
             sizes: _list(_sizes.text),
             colors: _list(_colors.text),
@@ -576,24 +595,68 @@ class _ItemEditorState extends ConsumerState<_ItemEditor> {
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text(widget.item == null ? 'Nouvel article' : 'Modifier l’article', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
-            Row(children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: _uploading ? null : _pickPhoto,
-                child: ShopPhotoBox(url: shopPhotoUrl(_photoPath), size: 84, icon: Icons.add_a_photo_rounded),
+            TextFormField(
+              controller: _name,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(labelText: 'Nom de l’article'),
+              validator: (v) => Validators.required(v, 'Le nom'),
+            ),
+            const SizedBox(height: 14),
+            Text('Photos (${_photos.length}/8)', style: const TextStyle(fontWeight: FontWeight.w700)),
+            const Text('La première est la photo principale. Touchez une photo pour la mettre en premier.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 92,
+              child: ListView(scrollDirection: Axis.horizontal, children: [
+                for (final entry in _photos.asMap().entries)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Stack(children: [
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => setState(() => _photos.insert(0, _photos.removeAt(entry.key))),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: entry.key == 0 ? AppColors.primary : Colors.transparent, width: 2.5),
+                          ),
+                          child: ShopPhotoBox(url: shopPhotoUrl(entry.value), size: 84, icon: Icons.image_outlined),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: InkWell(
+                          onTap: () => setState(() => _photos.removeAt(entry.key)),
+                          child: const CircleAvatar(radius: 12, backgroundColor: AppColors.danger, child: Icon(Icons.close_rounded, size: 16, color: Colors.white)),
+                        ),
+                      ),
+                    ]),
+                  ),
+                if (_photos.length < 8)
+                  InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: _uploading ? null : _pickPhoto,
+                    child: _uploading
+                        ? const SizedBox(width: 84, height: 84, child: Center(child: CircularProgressIndicator()))
+                        : const ShopPhotoBox(url: null, size: 84, icon: Icons.add_a_photo_rounded),
+                  ),
+              ]),
+            ),
+            const SizedBox(height: 12),
+            if (_videoPath == null)
+              OutlinedButton.icon(
+                onPressed: _uploading ? null : _pickVideo,
+                icon: const Icon(Icons.videocam_rounded),
+                label: const Text('Ajouter une vidéo (30 Mo max)'),
+              )
+            else
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.videocam_rounded, color: AppColors.primaryDark),
+                title: const Text('Vidéo ajoutée'),
+                trailing: TextButton(onPressed: () => setState(() => _videoPath = null), child: const Text('Retirer')),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _name,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(labelText: 'Nom de l’article'),
-                  validator: (v) => Validators.required(v, 'Le nom'),
-                ),
-              ),
-            ]),
-            if (_photoPath != null)
-              Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => setState(() => _photoPath = null), child: const Text('Retirer la photo'))),
             const SizedBox(height: 12),
             TextFormField(
               controller: _price,

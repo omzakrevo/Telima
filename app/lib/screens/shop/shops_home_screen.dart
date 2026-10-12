@@ -126,6 +126,7 @@ class _ShopCard extends StatelessWidget {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(r.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                   if (r.subtitle.isNotEmpty) Text(r.subtitle, style: const TextStyle(color: AppColors.textMuted)),
+                  if (r.ratingCount > 0) Padding(padding: const EdgeInsets.only(top: 2), child: RatingDisplay(rating: r.ratingAvg, count: r.ratingCount, size: 14)),
                   const SizedBox(height: 8),
                   Wrap(spacing: 6, runSpacing: 6, children: [
                     ShopInfoTag(r.acceptingOrders ? 'Ouvert' : 'Fermé', color: r.acceptingOrders ? AppColors.primary : AppColors.danger),

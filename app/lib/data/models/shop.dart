@@ -40,6 +40,8 @@ class Shop {
         status = asStr(j['status']) ?? 'approved',
         ownerId = asStr(j['owner_id']),
         distanceKm = asDouble(j['distance_km']),
+        ratingAvg = asDouble(j['rating_avg']) ?? 0,
+        ratingCount = asInt(j['rating_count']),
         categories = [for (final c in (j['categories'] as List? ?? const [])) ShopCategory(Map<String, dynamic>.from(c as Map))],
         items = [for (final i in (j['items'] as List? ?? const [])) ShopProduct(Map<String, dynamic>.from(i as Map))];
 
@@ -64,6 +66,8 @@ class Shop {
   final String status;
   final String? ownerId;
   final double? distanceKm;
+  final double ratingAvg;
+  final int ratingCount;
   final List<ShopCategory> categories;
   final List<ShopProduct> items;
 
@@ -106,7 +110,11 @@ class ShopProduct {
         isAvailable = asBool(j['is_available'], true),
         sizes = [for (final x in (j['sizes'] as List? ?? const [])) '$x'],
         colors = [for (final x in (j['colors'] as List? ?? const [])) '$x'],
-        stock = j['stock'] == null ? null : asInt(j['stock']);
+        stock = j['stock'] == null ? null : asInt(j['stock']),
+        extraPhotos = [for (final x in (j['photos'] as List? ?? const [])) '$x'],
+        videoPath = asStr(j['video_path']),
+        ratingAvg = asDouble(j['rating_avg']) ?? 0,
+        ratingCount = asInt(j['rating_count']);
   final String id;
   final String? categoryId;
   final String name;
@@ -120,7 +128,20 @@ class ShopProduct {
   final List<String> colors;
   final int? stock;
 
+  /// Photos supplémentaires (la photo principale est [photoPath]), vidéo de présentation et note moyenne.
+  final List<String> extraPhotos;
+  final String? videoPath;
+  final double ratingAvg;
+  final int ratingCount;
+
   String? get photoUrl => shopPhotoUrl(photoPath);
+  String? get videoUrl => shopPhotoUrl(videoPath);
+
+  /// Toutes les photos de l'article, la principale en premier.
+  List<String> get galleryPaths => [
+        if (photoPath != null && photoPath!.isNotEmpty) photoPath!,
+        for (final p in extraPhotos) if (p != photoPath) p,
+      ];
 
   /// Vendable : marqué disponible et pas en rupture de stock.
   bool get inStock => isAvailable && (stock == null || stock! > 0);
@@ -230,4 +251,21 @@ class ShopOrder {
         if (isDelivery) ('out_for_delivery', 'Livreur en route'),
         ('delivered', isDelivery ? 'Livrée' : 'Retirée'),
       ];
+}
+
+/// Avis d'un client sur une boutique ou un article.
+class ShopReview {
+  ShopReview(Json j)
+      : id = '${j['id']}',
+        rating = asInt(j['rating']),
+        comment = asStr(j['comment']),
+        author = asStr(j['author']) ?? 'Client',
+        createdAt = DateTime.tryParse('${j['created_at']}')?.toLocal(),
+        mine = asBool(j['mine'], false);
+  final String id;
+  final int rating;
+  final String? comment;
+  final String author;
+  final DateTime? createdAt;
+  final bool mine;
 }

@@ -25,7 +25,7 @@ class RestaurantRepository {
   Future<List<Restaurant>> search({
     required double lat,
     required double lng,
-    double maxKm = 15,
+    double maxKm = 5000,
     String? query,
     bool delivers = false,
   }) async {

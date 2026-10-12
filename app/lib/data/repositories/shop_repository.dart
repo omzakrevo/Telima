@@ -116,7 +116,7 @@ class ShopRepository {
   Future<String?> pickAndUploadPhoto({double maxWidth = 1280}) async {
     final XFile? file = await _storage.pickImage(maxWidth: maxWidth);
     if (file == null) return null;
-    return _storage.uploadXFile('shops', file);
+    return _storage.uploadXFile('boutiques', file);
   }
 
   Future<void> saveCategory({String? id, required String shopId, required String name, int sortOrder = 0}) async {

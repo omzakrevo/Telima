@@ -1,6 +1,7 @@
 import React from "react";
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   Img,
   Series,
@@ -17,7 +18,9 @@ import QRCode from "qrcode";
  * Vidéo verticale 9:16 « Telima Boutiques », style motion design rapide :
  * fond vert continu avec carrés flottants, gros mots animés, notifications qui s'empilent,
  * maquette de téléphone, puis fin avec logo, slogan et lien.
- * Pas de musique intégrée : ajouter un son tendance directement dans TikTok au moment de publier.
+ * Voix off : public/voix-off-boutiques.mp3 (ElevenLabs, voix « Simon »). Les scènes et les animations
+ * sont calées sur le minutage mot à mot de cette voix (transcription automatique) : si la voix change,
+ * reprendre les coupes CUTS et les délais marqués « voix » dans chaque scène.
  */
 
 // Police chargée depuis public/fonts (mêmes fichiers que l'application) : rendu possible sans Internet.
@@ -47,9 +50,11 @@ const C = {
   wa: "#25D366",
 };
 
-// Durées des scènes en secondes (total ≈ 39 s)
-const SCENES = [3.2, 4.2, 3.8, 2.8, 1.6, 3.4, 6, 4.4, 4.6, 5];
-export const BOUTIQUE_TOTAL_FRAMES = SCENES.reduce((a, b) => a + s(b), 0);
+// Début de chaque scène en secondes, calé sur la voix off (dernière valeur = fin de la vidéo, 35 s)
+const CUTS = [0, 3.66, 7.28, 10.3, 12.52, 13.22, 15.72, 20.78, 24.62, 28.08, 35.0];
+/** Durée de chaque scène en images. */
+const FR = CUTS.slice(1).map((c, i) => s(c) - s(CUTS[i]));
+export const BOUTIQUE_TOTAL_FRAMES = s(CUTS[CUTS.length - 1]);
 
 // ───────────────────────── Briques communes ─────────────────────────
 
@@ -307,19 +312,20 @@ const popAt = (frame: number, delay: number) => spring({ frame: frame - delay, f
 /** 1. Accroche : « Tu vends des habits sur WhatsApp ? » */
 const Scene1: React.FC = () => {
   const frame = useCurrentFrame();
-  const goods = ["habits", "chaussures", "sacs", "pagnes"];
-  const idx = Math.min(goods.length - 1, Math.floor(interpolate(frame, [14, 78], [0, goods.length], clamp)));
-  const swap = (frame - 14) % 16;
-  const bump = interpolate(swap, [0, 5], [0.7, 1], clamp);
+  // voix : « habits » 0,32 s, « chaussures » 1,08 s, « sacs » 1,92 s
+  const goods = ["habits", "chaussures", "sacs"];
+  const at = [10, 32, 58];
+  const idx = Math.max(0, at.filter((f) => frame >= f).length - 1);
+  const bump = interpolate(frame - at[idx], [0, 5], [0.7, 1], clamp);
   return (
-    <Out frames={s(SCENES[0])}>
+    <Out frames={FR[0]}>
       <Words text="Tu vends des" top={600} size={120} />
       <div style={{ position: "absolute", top: 760, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-        <div style={{ padding: "14px 46px", borderRadius: 40, background: C.white, color: C.greenDark, fontFamily, fontWeight: 800, fontSize: 120, letterSpacing: -2, transform: `scale(${frame < 14 ? popAt(frame, 8) : bump}) rotate(-2deg)`, boxShadow: "0 18px 40px rgba(0,0,0,0.22)" }}>
+        <div style={{ padding: "14px 46px", borderRadius: 40, background: C.white, color: C.greenDark, fontFamily, fontWeight: 800, fontSize: 120, letterSpacing: -2, transform: `scale(${frame < at[1] ? popAt(frame, at[0]) : bump}) rotate(-2deg)`, boxShadow: "0 18px 40px rgba(0,0,0,0.22)" }}>
           {goods[idx]}
         </div>
       </div>
-      <Words text="sur WhatsApp ?" top={960} size={120} delay={22} />
+      <Words text="sur WhatsApp ?" top={960} size={120} delay={80} />
     </Out>
   );
 };
@@ -327,14 +333,15 @@ const Scene1: React.FC = () => {
 /** 2. « Ça te parle ? » + messages clients qui s'empilent */
 const Scene2: React.FC = () => {
   const msgs = [
-    { t: "Mariam", b: "C'est combien la robe bleue ?", d: 14, tilt: -1.5 },
-    { t: "Client", b: "Il reste la taille 40 ?", d: 30, tilt: 1 },
-    { t: "Ibrahim", b: "Envoie encore les photos stp", d: 46, tilt: -1 },
-    { t: "Fatou", b: "Tu livres à Dassasgho ?", d: 62, tilt: 1.5 },
-    { t: "Inconnu", b: "🎤 Message vocal (0:42)", d: 78, tilt: -1 },
+    // voix : « C'est combien ? » +0,98 s, « Il reste ta taille ? » +1,82 s, « Tu livres ? » +2,80 s
+    { t: "Mariam", b: "C'est combien la robe bleue ?", d: 27, tilt: -1.5 },
+    { t: "Client", b: "Il reste la taille 40 ?", d: 53, tilt: 1 },
+    { t: "Ibrahim", b: "Envoie encore les photos stp", d: 68, tilt: -1 },
+    { t: "Fatou", b: "Tu livres à Dassasgho ?", d: 82, tilt: 1.5 },
+    { t: "Inconnu", b: "🎤 Message vocal (0:42)", d: 96, tilt: -1 },
   ];
   return (
-    <Out frames={s(SCENES[1])}>
+    <Out frames={FR[1]}>
       <Words text="Ça te parle ?" top={300} size={110} />
       <div style={{ position: "absolute", top: 520, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 22 }}>
         {msgs.map((m) => (
@@ -348,8 +355,8 @@ const Scene2: React.FC = () => {
 /** 3. « À certains tu ne réponds pas vite… tu les rates. » + compteurs */
 const Scene3: React.FC = () => {
   const frame = useCurrentFrame();
-  const msgs = Math.floor(interpolate(frame, [20, 80], [12, 88], { ...clamp, easing: Easing.out(Easing.cubic) }));
-  const calls = Math.floor(interpolate(frame, [30, 80], [1, 6], clamp));
+  const msgs = Math.floor(interpolate(frame, [14, 70], [12, 88], { ...clamp, easing: Easing.out(Easing.cubic) }));
+  const calls = Math.floor(interpolate(frame, [24, 70], [1, 6], clamp));
   const Counter: React.FC<{ icon: string; value: string; delay: number }> = ({ icon, value, delay }) => {
     const p = usePop(delay, 12);
     return (
@@ -360,22 +367,23 @@ const Scene3: React.FC = () => {
     );
   };
   return (
-    <Out frames={s(SCENES[2])}>
+    <Out frames={FR[2]}>
       <Words text="À certains, tu réponds pas vite…" top={420} size={92} stagger={3} />
       <div style={{ position: "absolute", top: 760, left: 0, right: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 30 }}>
-        <Counter icon="💬" value={`+ ${msgs}`} delay={14} />
-        <Counter icon="📞" value={`+ ${calls}`} delay={24} />
+        <Counter icon="💬" value={`+ ${msgs}`} delay={8} />
+        <Counter icon="📞" value={`+ ${calls}`} delay={18} />
       </div>
-      <Highlight text="tu les rates." top={1190} delay={62} size={96} bg={C.orange} color={C.white} />
+      <Highlight text="tu les rates." top={1190} delay={62} size={96} bg={C.orange} color={C.white} /* voix : +2,14 s */ />
     </Out>
   );
 };
 
 /** 4. « Tu n'arrives plus à suivre tes commandes ? » */
 const Scene4: React.FC = () => (
-  <Out frames={s(SCENES[3])}>
-    <Words text="Tu n'arrives plus à suivre" top={620} size={104} stagger={3} />
-    <Highlight text="tes commandes ?" top={900} delay={22} size={100} />
+  <Out frames={FR[3]}>
+    <Words text="Et tes commandes," top={600} size={100} stagger={3} />
+    {/* voix : « tu n'arrives plus à suivre » +0,84 s */}
+    <Highlight text="tu ne suis plus !" top={900} delay={25} size={96} />
   </Out>
 );
 
@@ -386,7 +394,7 @@ const Scene5: React.FC = () => {
   const shake = frame < 14 ? Math.sin(frame * 3.2) * (14 - frame) * 1.6 : 0;
   const flash = interpolate(frame, [0, 6], [0.45, 0], clamp);
   return (
-    <Out frames={s(SCENES[4])}>
+    <Out frames={FR[4]}>
       <AbsoluteFill style={{ background: `rgba(255,255,255,${flash})` }} />
       <div style={{ position: "absolute", top: 760, left: 0, right: 0, textAlign: "center", fontFamily, fontWeight: 800, fontSize: 300, letterSpacing: -10, color: C.white, transform: `scale(${2.2 - p * 1.2}) translateX(${shake}px)`, textShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
         NON.
@@ -397,12 +405,12 @@ const Scene5: React.FC = () => {
 
 /** 6. « Ta boutique doit vendre même quand tu dors. » */
 const Scene6: React.FC = () => (
-  <Out frames={s(SCENES[5])}>
+  <Out frames={FR[5]}>
     <Words text="Ta boutique doit vendre" top={640} size={108} stagger={4} />
-    <Highlight text="même quand tu dors." top={920} delay={24} size={88} />
+    <Highlight text="même quand tu dors." top={920} delay={35} size={78} /* voix : +1,18 s */ />
     <div style={{ position: "absolute", top: 1170, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 40 }}>
-      <Icon3D name="shopping_bags" size={190} delay={40} float={10} />
-      <Icon3D name="purse" size={170} delay={48} float={12} />
+      <Icon3D name="shopping_bags" size={190} delay={44} float={10} />
+      <Icon3D name="purse" size={170} delay={52} float={12} />
     </div>
   </Out>
 );
@@ -410,15 +418,16 @@ const Scene6: React.FC = () => (
 /** 7. La boutique dans le téléphone : nom, catalogue, tailles, stock */
 const Scene7: React.FC = () => {
   const frame = useCurrentFrame();
-  const name = typed("Awa Style", frame, 26, 3);
+  const name = typed("Awa Style", frame, 22, 3);
   const products = [
-    { n: "Robe wax", p: "15 000", icon: "shopping_bags", bg: "#FFE5CC", d: 70, tag: "S · M · L" },
-    { n: "Sac à main", p: "12 500", icon: "purse", bg: "#ECE8FA", d: 80, tag: "Noir · Beige" },
-    { n: "Baskets", p: "18 000", icon: "package", bg: "#E3EEFC", d: 90, tag: "39 → 44" },
-    { n: "Coffret", p: "7 500", icon: "wrapped_gift", bg: "#FCE6E8", d: 100, tag: "Plus que 2", low: true },
+    // voix : « tes articles » +2,22 s, « tes prix » +3,06 s, « tes tailles » +3,66 s, « ton stock » +4,24 s
+    { n: "Robe wax", p: "15 000", icon: "shopping_bags", bg: "#FFE5CC", d: 66, tag: "S · M · L" },
+    { n: "Sac à main", p: "12 500", icon: "purse", bg: "#ECE8FA", d: 78, tag: "Noir · Beige" },
+    { n: "Baskets", p: "18 000", icon: "package", bg: "#E3EEFC", d: 108, tag: "39 → 44" },
+    { n: "Coffret", p: "7 500", icon: "wrapped_gift", bg: "#FCE6E8", d: 126, tag: "Plus que 2", low: true },
   ];
   return (
-    <Out frames={s(SCENES[6])}>
+    <Out frames={FR[6]}>
       <div style={{ position: "absolute", top: 250, left: 0, right: 0, textAlign: "center", fontFamily, fontWeight: 800, fontSize: 76, color: C.white, letterSpacing: -1.5 }}>
         Crée ta boutique en ligne
       </div>
@@ -433,7 +442,7 @@ const Scene7: React.FC = () => {
         </div>
         <div style={{ marginTop: 58, fontWeight: 800, fontSize: 44, color: C.ink, minHeight: 56 }}>
           {name}
-          <span style={{ opacity: frame < 70 && Math.floor(frame / 8) % 2 ? 0 : frame < 70 ? 1 : 0, color: C.green }}>|</span>
+          <span style={{ opacity: frame < 60 && Math.floor(frame / 8) % 2 ? 0 : frame < 60 ? 1 : 0, color: C.green }}>|</span>
         </div>
         <div style={{ fontWeight: 500, fontSize: 26, color: C.muted }}>Vêtements · Chaussures · Accessoires</div>
         <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -461,15 +470,16 @@ const Scene7: React.FC = () => {
 /** 8. Le lien et le QR code */
 const Scene8: React.FC = () => {
   const frame = useCurrentFrame();
-  const link = typed(SHOP_LINK, frame, 10, 1.4);
-  const qrPop = usePop(48, 12, 150);
+  const link = typed(SHOP_LINK, frame, 4, 0.8);
+  // voix : « ou ton QR code » +0,78 s, « tes clients commandent directement » +2,06 s
+  const qrPop = usePop(24, 12, 150);
   const chips = [
-    { n: "WhatsApp", c: C.wa, d: 86 },
-    { n: "Facebook", c: "#1877F2", d: 94 },
-    { n: "TikTok", c: "#111111", d: 102 },
+    { n: "WhatsApp", c: C.wa, d: 62 },
+    { n: "Facebook", c: "#1877F2", d: 68 },
+    { n: "TikTok", c: "#111111", d: 74 },
   ];
   return (
-    <Out frames={s(SCENES[7])}>
+    <Out frames={FR[7]}>
       <Words text="Partage ton lien" top={250} size={100} />
       <div style={{ position: "absolute", top: 420, left: 60, right: 60, display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "24px 36px", borderRadius: 999, background: C.white, boxShadow: "0 18px 40px rgba(0,0,0,0.22)", fontFamily, fontWeight: 800, fontSize: 44, color: C.greenDark, transform: `scale(${usePop(4)})`, minWidth: 600, justifyContent: "center" }}>
@@ -477,7 +487,7 @@ const Scene8: React.FC = () => {
           <span>{link}</span>
         </div>
       </div>
-      <div style={{ position: "absolute", top: 580, left: 0, right: 0, textAlign: "center", fontFamily, fontWeight: 800, fontSize: 70, color: C.mint, opacity: interpolate(frame, [40, 50], [0, 1], clamp) }}>
+      <div style={{ position: "absolute", top: 580, left: 0, right: 0, textAlign: "center", fontFamily, fontWeight: 800, fontSize: 70, color: C.mint, opacity: interpolate(frame, [18, 26], [0, 1], clamp) }}>
         ou ton QR code
       </div>
       <div style={{ position: "absolute", top: 700, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
@@ -501,11 +511,12 @@ const Scene8: React.FC = () => {
 /** 9. La commande arrive, Telima livre, paiement à la livraison */
 const Scene9: React.FC = () => {
   const frame = useCurrentFrame();
-  const t = interpolate(frame, [52, 118], [0, 1], { ...clamp, easing: Easing.inOut(Easing.quad) });
-  const delivered = frame >= 120;
-  const doneP = usePop(120, 10);
+  // voix : « livre ton client » +1,16 s, « paie à la livraison » +2,22 s
+  const t = interpolate(frame, [16, 64], [0, 1], { ...clamp, easing: Easing.inOut(Easing.quad) });
+  const delivered = frame >= 66;
+  const doneP = usePop(66, 10);
   return (
-    <Out frames={s(SCENES[8])}>
+    <Out frames={FR[8]}>
       <div style={{ position: "absolute", top: 250, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
         <Notif
           delay={4}
@@ -514,15 +525,15 @@ const Scene9: React.FC = () => {
           icon={<Img src={staticFile("logo.png")} style={{ width: 84, height: 84, borderRadius: 22, flexShrink: 0 }} />}
         />
       </div>
-      <Words text="Telima livre ton client" top={520} size={92} delay={26} stagger={3} />
+      <Words text="Telima livre ton client" top={520} size={92} delay={6} stagger={3} />
       <svg width={1080} height={400} style={{ position: "absolute", top: 820, left: 0 }}>
         <path d="M150,200 C380,40 700,360 930,200" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={14} strokeLinecap="round" strokeDasharray="2 30" />
       </svg>
       <div style={{ position: "absolute", top: 930, left: 70 }}>
-        <Icon3D name="convenience_store" size={170} delay={30} />
+        <Icon3D name="convenience_store" size={170} delay={8} />
       </div>
       <div style={{ position: "absolute", top: 920, left: 840 }}>
-        <Icon3D name="round_pushpin" size={160} delay={36} float={8} />
+        <Icon3D name="round_pushpin" size={160} delay={12} float={8} />
       </div>
       {(() => {
         // Trajet sur la courbe de Bézier ci-dessus
@@ -537,7 +548,7 @@ const Scene9: React.FC = () => {
         const y = u ** 3 * P[0].y + 3 * u * u * t * P[1].y + 3 * u * t * t * P[2].y + t ** 3 * P[3].y;
         return (
           <div style={{ position: "absolute", left: x - 90, top: 820 + y - 150 }}>
-            <Icon3D name="motor_scooter" size={180} delay={44} />
+            <Icon3D name="motor_scooter" size={180} delay={14} />
           </div>
         );
       })()}
@@ -554,7 +565,8 @@ const Scene9: React.FC = () => {
 const Scene10: React.FC = () => {
   const frame = useCurrentFrame();
   const logo = usePop(2, 10, 150);
-  const pill = usePop(52, 12);
+  // voix : « Un lien » +0,86 s, « une commande » +1,84 s, « livrée » +2,48 s, « Rendez-vous sur… » +3,28 s
+  const pill = usePop(96, 12);
   return (
     <AbsoluteFill style={{ fontFamily }}>
       <div style={{ position: "absolute", top: 380, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
@@ -566,14 +578,14 @@ const Scene10: React.FC = () => {
       <div style={{ position: "absolute", top: 885, left: 0, right: 0, textAlign: "center", fontWeight: 800, fontSize: 64, color: C.mint, opacity: interpolate(frame, [20, 30], [0, 1], clamp) }}>
         Boutiques
       </div>
-      <Words text="Un lien. Une commande. Livrée." top={1030} size={74} delay={30} stagger={4} />
+      <Words text="Un lien. Une commande. Livrée." top={1030} size={74} delay={26} stagger={12} />
       <div style={{ position: "absolute", top: 1260, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 18px 14px 32px", borderRadius: 999, background: C.greenDark, border: "3px solid rgba(255,255,255,0.35)", transform: `scale(${pill})` }}>
           <span style={{ color: C.white, fontWeight: 700, fontSize: 40 }}>🔗 Lien</span>
           <span style={{ padding: "14px 34px", borderRadius: 999, background: C.white, color: C.greenDark, fontWeight: 800, fontSize: 46 }}>{SITE}</span>
         </div>
       </div>
-      <div style={{ position: "absolute", top: 1420, left: 0, right: 0, textAlign: "center", fontWeight: 600, fontSize: 36, color: "rgba(255,255,255,0.8)", opacity: interpolate(frame, [70, 82], [0, 1], clamp) }}>
+      <div style={{ position: "absolute", top: 1420, left: 0, right: 0, textAlign: "center", fontWeight: 600, fontSize: 36, color: "rgba(255,255,255,0.8)", opacity: interpolate(frame, [112, 124], [0, 1], clamp) }}>
         Restaurants aussi sur Telima
       </div>
     </AbsoluteFill>
@@ -584,10 +596,11 @@ export const BoutiqueVideo: React.FC = () => {
   const scenes = [Scene1, Scene2, Scene3, Scene4, Scene5, Scene6, Scene7, Scene8, Scene9, Scene10];
   return (
     <AbsoluteFill>
+      <Audio src={staticFile("voix-off-boutiques.mp3")} />
       <Backdrop />
       <Series>
         {scenes.map((Scene, i) => (
-          <Series.Sequence key={i} durationInFrames={s(SCENES[i])}>
+          <Series.Sequence key={i} durationInFrames={FR[i]}>
             <Scene />
           </Series.Sequence>
         ))}

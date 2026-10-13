@@ -10,12 +10,13 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { loadFont } from "@remotion/google-fonts/PlusJakartaSans";
+import { loadFont } from "@remotion/fonts";
 
-const { fontFamily } = loadFont("normal", {
-  weights: ["500", "700", "800"],
-  subsets: ["latin", "latin-ext"],
-});
+// Police chargée depuis public/fonts (mêmes fichiers que l'application) : rendu possible sans Internet.
+const fontFamily = "Plus Jakarta Sans Local";
+for (const weight of ["500", "700", "800"]) {
+  loadFont({ family: fontFamily, url: staticFile(`fonts/PlusJakartaSans-${weight}.ttf`), weight, format: "truetype" });
+}
 
 export const FPS = 30;
 const s = (sec: number) => Math.round(sec * FPS);

@@ -1,0 +1,201 @@
+name: Android (Shorebird)
+
+# Lancé à la main : GitHub > Actions > "Android (Shorebird)" > Run workflow. Rien à faire sur votre ordinateur.
+#
+#  - « release » : nouvelle version complète (nécessaire quand l'application change de fichiers : images, paquets, permissions…).
+#    Signée avec la clé Telima, envoyée à Shorebird, puis (si coché) publiée dans « Mises à jour appli » : les téléphones
+#    proposent la mise à jour à l'ouverture.
+#  - « patch » : mise à jour invisible du code Dart pour la version déjà installée (aucune action des utilisateurs).
+#
+# Secrets à ajouter UNE FOIS dans Settings > Secrets and variables > Actions > Repository secrets :
+#   SHOREBIRD_TOKEN            clé API Shorebird (déjà présente)
+#   SUPABASE_URL, SUPABASE_ANON_KEY   (déjà présents)
+#   TELIMA_KEYSTORE_BASE64     contenu du fichier telima-signing.jks encodé en base64 (une seule ligne)
+#   TELIMA_STORE_PASSWORD      mot de passe du fichier de clé
+#   TELIMA_KEY_ALIAS           nom (alias) de la clé
+#   TELIMA_KEY_PASSWORD        mot de passe de la clé
+#   SUPABASE_SERVICE_ROLE_KEY  (facultatif) clé « service_role » de Supabase : publication automatique dans « Mises à jour appli »
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "release = nouvelle version complète ; patch = correctif invisible"
+        type: choice
+        options: [release, patch, publish]
+        default: release
+      from_run:
+        description: "Mode publish : numéro du run (adresse /actions/runs/NUMERO) qui a produit l'APK"
+        type: string
+        default: ""
+      publish_in_app:
+        description: "Publier aussi dans « Mises à jour appli » (release uniquement ; clé service_role requise)"
+        type: boolean
+        default: true
+      notes:
+        description: "Nouveautés affichées aux utilisateurs"
+        type: string
+        default: "Voyages : choix du trajet, compagnies, paiement du ticket en ligne."
+      mandatory:
+        description: "Mise à jour obligatoire (bloque l'application jusqu'à l'installation)"
+        type: boolean
+        default: false
+
+jobs:
+  android:
+    if: inputs.mode != 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérification des secrets (jamais leurs valeurs)
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TELIMA_KEYSTORE_BASE64: ${{ secrets.TELIMA_KEYSTORE_BASE64 }}
+          TELIMA_STORE_PASSWORD: ${{ secrets.TELIMA_STORE_PASSWORD }}
+          TELIMA_KEY_ALIAS: ${{ secrets.TELIMA_KEY_ALIAS }}
+          TELIMA_KEY_PASSWORD: ${{ secrets.TELIMA_KEY_PASSWORD }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          WANT_PUBLISH: ${{ inputs.publish_in_app && inputs.mode == 'release' }}
+        run: |
+          python3 - <<'EOF'
+          import os, sys
+          need = ["SHOREBIRD_TOKEN", "SUPABASE_URL", "SUPABASE_ANON_KEY", "TELIMA_KEYSTORE_BASE64",
+                  "TELIMA_STORE_PASSWORD", "TELIMA_KEY_ALIAS", "TELIMA_KEY_PASSWORD"]
+          if os.environ.get("WANT_PUBLISH") == "true":
+              need.append("SUPABASE_SERVICE_ROLE_KEY")
+          missing = [k for k in need if not os.environ.get(k, "").strip()]
+          for k in need:
+              print(f"{k}: {len(os.environ.get(k, '').strip())} caractères")
+          if missing:
+              print("::error::Secrets manquants ou vides dans CE dépôt (Settings > Secrets and variables > Actions) : " + ", ".join(missing))
+              sys.exit(1)
+          EOF
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: shorebirdtech/setup-shorebird@v1
+
+      - name: Clé de signature et configuration Supabase
+        working-directory: app
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          TELIMA_KEYSTORE_BASE64: ${{ secrets.TELIMA_KEYSTORE_BASE64 }}
+          TELIMA_STORE_PASSWORD: ${{ secrets.TELIMA_STORE_PASSWORD }}
+          TELIMA_KEY_ALIAS: ${{ secrets.TELIMA_KEY_ALIAS }}
+          TELIMA_KEY_PASSWORD: ${{ secrets.TELIMA_KEY_PASSWORD }}
+        run: |
+          echo "$TELIMA_KEYSTORE_BASE64" | base64 -d > android/app/telima-signing.jks
+          # Vérifie tout de suite que le mot de passe et l'alias correspondent à la clé (échec clair sinon)
+          keytool -list -keystore android/app/telima-signing.jks -storepass "$TELIMA_STORE_PASSWORD" -alias "$TELIMA_KEY_ALIAS" >/dev/null
+          python3 - <<'EOF'
+          import json, os
+          from urllib.parse import urlparse
+          u = urlparse(os.environ["SUPABASE_URL"].strip())
+          url = f"{u.scheme}://{u.netloc}" if u.scheme and u.netloc else os.environ["SUPABASE_URL"].strip()
+          json.dump({"SUPABASE_URL": url, "SUPABASE_ANON_KEY": os.environ["SUPABASE_ANON_KEY"].strip()}, open("env.json", "w"))
+          EOF
+
+      - name: Version de l'application
+        id: ver
+        run: |
+          python3 - <<'EOF'
+          import os, re
+          m = re.search(r"^version:\s*(\d+\.\d+\.\d+)\+(\d+)", open("app/pubspec.yaml").read(), re.M)
+          name, build = m.group(1), int(m.group(2))
+          print(f"Version : {name}+{build} (numéro n = {build - 2000})")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"name={name}\nbuild={build}\nn={build - 2000}\n")
+          EOF
+
+      - name: Shorebird — nouvelle version complète
+        if: inputs.mode == 'release'
+        working-directory: app
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          TELIMA_STORE_PASSWORD: ${{ secrets.TELIMA_STORE_PASSWORD }}
+          TELIMA_KEY_ALIAS: ${{ secrets.TELIMA_KEY_ALIAS }}
+          TELIMA_KEY_PASSWORD: ${{ secrets.TELIMA_KEY_PASSWORD }}
+        run: |
+          shorebird release android --flutter-version=3.47.6 --artifact apk \
+            --target-platform android-arm,android-arm64 --dart-define-from-file=env.json
+
+      - name: Shorebird — correctif invisible
+        if: inputs.mode == 'patch'
+        working-directory: app
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+          TELIMA_STORE_PASSWORD: ${{ secrets.TELIMA_STORE_PASSWORD }}
+          TELIMA_KEY_ALIAS: ${{ secrets.TELIMA_KEY_ALIAS }}
+          TELIMA_KEY_PASSWORD: ${{ secrets.TELIMA_KEY_PASSWORD }}
+        run: |
+          shorebird patch android --release-version="${{ steps.ver.outputs.name }}+${{ steps.ver.outputs.build }}" \
+            --dart-define-from-file=env.json --allow-asset-diffs
+
+      - name: Garder l'APK (téléchargeable dans le résumé du run)
+        if: inputs.mode == 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telima-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Publier dans « Mises à jour appli »
+        if: inputs.mode == 'release' && inputs.publish_in_app
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          VERSION_N: ${{ steps.ver.outputs.n }}
+          NOTES: ${{ inputs.notes }}
+          MANDATORY: ${{ inputs.mandatory }}
+          APK: app/build/app/outputs/flutter-apk/app-release.apk
+        run: python3 scripts/publish_release.py
+
+  publish:
+    if: inputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer l'APK du run précédent
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.from_run }}
+          github-token: ${{ github.token }}
+          pattern: telima-*-apk
+          path: apk
+          merge-multiple: true
+
+      - name: Version de l'application
+        id: ver
+        run: |
+          python3 - <<'EOF'
+          import os, re
+          m = re.search(r"^version:\s*(\d+\.\d+\.\d+)\+(\d+)", open("app/pubspec.yaml").read(), re.M)
+          name, build = m.group(1), int(m.group(2))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"name={name}\nn={build - 2000}\n")
+          EOF
+
+      - name: Publier dans « Mises à jour appli »
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          VERSION_N: ${{ steps.ver.outputs.n }}
+          NOTES: ${{ inputs.notes }}
+          MANDATORY: ${{ inputs.mandatory }}
+          APK: apk/app-release.apk
+        run: python3 scripts/publish_release.py

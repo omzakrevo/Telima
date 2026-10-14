@@ -199,3 +199,13 @@ L’utilisateur fournit un nouveau dry-run externe réussi après adaptation : p
 ### Codex — 9 octobre 2026 — patch 2 publié sur Stable
 
 L’utilisateur a exécuté la publication dans PowerShell Windows et fourni le résultat : Published Patch 2, artifacts uploaded, promoting patch to stable réussi. Application f289fbd5-6f76-4b61-8dc4-7ea6a1bcb4bc ; release Android 1.5.0+2006 ; arm32 1,76 MB et arm64 1,66 MB ; canal Stable. Seules différences assets : NOTICES.Z et LICENSE-fluent-emoji.txt, diagnostiquées précédemment ; aucune différence de police après adaptation. Publication terminée, ne pas republier. Validation sur téléphone reste à effectuer.
+
+### Claude Code — 14 octobre 2026 (passation à Codex)
+
+L'utilisateur continue désormais avec Codex. Tout mon travail est sur la branche **`codex/reprise`** (PR ouverte vers `main`) :
+QR code des liens restaurants et boutiques, module **Voyages** complet (migration `telima_18_voyages` déjà appliquée en production),
+vidéo Boutiques avec voix off. `flutter analyze` propre, 45 tests verts.
+
+Le fichier **`AGENTS.md`** à la racine résume le projet, les commandes, les conventions, l'état de la base et la liste des tâches
+suivantes (fusion de la PR, patch Shorebird sur 1.8.0+2010 ou version complète 1.9.0+2011, redéploiement du site).
+Je ne travaille plus sur le dépôt : aucun conflit possible de mon côté.

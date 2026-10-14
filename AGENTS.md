@@ -49,7 +49,7 @@ flutter run -d chrome --dart-define-from-file=env.json      # env.json : copier 
 * `docs/ARCHITECTURE.md`, `docs/PAIEMENTS_ET_SERVICES.md`, `docs/MISES_A_JOUR.md` (APK, Shorebird)
 
 ## État au 14 octobre 2026 (passation de Claude Code)
-Branche **`codex/reprise`** = `main` + tout le travail ci-dessous, **pas encore fusionnée dans `main`** (PR ouverte).
+Tout le travail ci-dessous est **fusionné dans `main`** (PR n°3, 14/10/2026) ; `app/pubspec.yaml` est en version **1.9.0+2011**.
 
 Fait, testé (`flutter analyze` propre, 45 tests verts) :
 1. **QR code des liens** restaurants et boutiques : afficher et télécharger en PNG, côté commerçant et côté client
@@ -71,13 +71,23 @@ Migrations en production (les plus récentes) : 13 restaurants, 14 suppression u
 16 téléphone facultatif (appliquée hors historique), 17 galerie et avis boutiques, 18 voyages, 18b search_path.
 
 ## À faire ensuite
-1. **Relire et fusionner** la PR `codex/reprise` → `main`.
-2. **Mise à jour des téléphones.** Versions de base Shorebird publiées : 1.7.0+2009 et **1.8.0+2010** (la plus récente).
-   * Patch possible sur 1.8.0+2010 : seul changement natif depuis = la ligne `/v/` dans `AndroidManifest.xml`
-     (Shorebird le signale ; le reste part dans le patch, les liens `/v/` s'ouvrent alors dans le navigateur).
-   * Version complète **1.9.0+2011** recommandée pour activer les liens `/v/` dans l'application :
-     `shorebird release android --artifact apk --target-platform android-arm,android-arm64 --dart-define-from-file=env.cloud.json`
-     sur le PC du propriétaire (il a la clé de signature et la clé API), puis publication dans Admin → Mises à jour appli.
-3. **Site web** : redéployer (workflow GitHub « Deploy web (LWS) », déclenchement manuel) pour publier QR code et Voyages.
-4. Idées listées dans les docs des modules : lecture du QR à la caméra pour le contrôle des tickets, plan des places,
+1. ~~Relire et fusionner la PR `codex/reprise`~~ : fait (PR n°3 fusionnée dans `main`, version portée à 1.9.0+2011).
+2. ~~Redéployer le site~~ : workflow « Deploy web (LWS) » lancé le 14/10/2026 sur `main` (avant le passage en 1.9.0, sans effet sur le web).
+   Vérifier sur https://telimatchi.com : « Voyages » et « Ma compagnie » à l'accueil, QR code sur une page restaurant ou boutique.
+3. **Version complète 1.9.0+2011 — à faire sur le PC du propriétaire** (clé de signature `telima-signing.jks`, `env.cloud.json`, clé API Shorebird) :
+   ```bash
+   git pull origin main
+   cd app && flutter analyze && flutter test
+   shorebird release android --artifact apk --target-platform android-arm,android-arm64 --dart-define-from-file=env.cloud.json
+   ```
+   Puis Admin → Mises à jour appli → Publier : version `1.9.0`, numéro `11`, fichier `build/app/outputs/flutter-apk/app-release.apk`.
+   Elle active l'ouverture des liens `/v/` dans l'application (filtre ajouté à `AndroidManifest.xml`).
+   Le patch Shorebird sur 1.8.0+2010 reste possible mais les liens `/v/` s'ouvrent alors dans le navigateur.
+4. **Vérifier le contrôle automatique** `build-and-test` de la PR n°3 / de `main` : la PR a été fusionnée avant sa fin et
+   les modifications de la migration 19 côté Flutter (statut « en attente » des compagnies, test `travel_test.dart`) n'ont pas été exécutées localement.
+5. **Expiration automatique des réservations** : activer l'extension `pg_cron` dans Supabase puis relancer
+   `select cron.schedule('telima-expire-travel-bookings', '*/15 * * * *', 'select telima.expire_stale_travel_bookings()');`.
+6. **Circuit de l'argent des tickets livrés** : le livreur encaisse le prix des billets « pour la compagnie » mais rien ne suit
+   le reversement (table, écran, règle). À définir avec le propriétaire avant les premières livraisons de tickets réelles.
+7. Idées listées dans les docs des modules : lecture du QR à la caméra pour le contrôle des tickets, plan des places,
    départs réguliers automatiques, Mobile Money, promotions et guide des tailles pour les boutiques.

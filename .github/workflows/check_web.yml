@@ -1,0 +1,33 @@
+name: Contrôle du site web (vitesse)
+
+# Lancé à la main : GitHub > Actions > "Contrôle du site web (vitesse)" > Run workflow.
+# Ne modifie rien : affiche, pour les fichiers principaux de https://telimatchi.com, la taille envoyée,
+# la compression (br / gzip), le cache et le temps de téléchargement.
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Adresse du site"
+        type: string
+        default: "https://telimatchi.com"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mesures
+        env:
+          SITE: ${{ inputs.site }}
+        run: |
+          for f in "" main.dart.js flutter_bootstrap.js assets/FontManifest.json assets/assets/fonts/PlusJakartaSans-700.ttf; do
+            for enc in "br, gzip" "gzip" "identity"; do
+              echo "=== /$f  (Accept-Encoding: $enc)"
+              curl -s -o /dev/null -H "Accept-Encoding: $enc" -D /tmp/h.txt \
+                -w "taille reçue : %{size_download} octets · temps : %{time_total}s · HTTP %{http_code}\n" "$SITE/$f"
+              grep -i -E "^(content-encoding|cache-control|etag|last-modified|content-type|server|content-length)" /tmp/h.txt || true
+            done
+          done
+          echo "=== Fichier inexistant (doit renvoyer l'application)"
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" "$SITE/r/test"
+          echo "=== .htaccess visible ?"
+          curl -s -o /dev/null -w "HTTP %{http_code} (403 ou 404 = protégé, normal)\n" "$SITE/.htaccess"

@@ -47,6 +47,20 @@ jobs:
         working-directory: app
         run: flutter build web --release --dart-define-from-file=env.json
 
+      - name: Diagnostic des secrets (longueurs seulement)
+        env:
+          LWS_HOST: ${{ secrets.LWS_HOST }}
+          LWS_USER: ${{ secrets.LWS_USER }}
+          LWS_PASS: ${{ secrets.LWS_PASS }}
+          LWS_DIR: ${{ secrets.LWS_DIR }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          for n in LWS_HOST LWS_USER LWS_PASS LWS_DIR SUPABASE_URL SUPABASE_ANON_KEY; do
+            v="${!n}"; echo "$n : ${#v} caractères"
+          done
+          echo "Dépôt : ${{ github.repository }}"
+
       - name: Envoyer sur LWS (SFTP)
         env:
           LWS_HOST: ${{ secrets.LWS_HOST }}

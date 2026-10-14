@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'config/env.dart';
 import 'core/services/push_service.dart';
+import 'core/services/visit_tracker.dart';
 import 'providers/core_providers.dart';
 
 Future<void> main() async {
@@ -22,14 +23,17 @@ Future<void> main() async {
 
   if (Env.isConfigured) {
     // Le démarrage ne doit jamais rester bloqué par une connexion lente :
-    // au-delà de 8 s l'application s'affiche quand même et termine l'initialisation en arrière-plan.
+    // au-delà de 4 s l'application s'affiche quand même et termine l'initialisation en arrière-plan.
     await Supabase.initialize(
       url: Env.supabaseUrl,
       publishableKey: Env.supabaseAnonKey,
       postgrestOptions: const PostgrestClientOptions(schema: Env.dbSchema),
       realtimeClientOptions: const RealtimeClientOptions(eventsPerSecond: 5),
-    ).timeout(const Duration(seconds: 8), onTimeout: () => Supabase.instance);
+    ).timeout(const Duration(seconds: 4), onTimeout: () => Supabase.instance);
   }
+
+  // Compteur de visiteurs (site web et application) : en arrière-plan, sans jamais retarder l'affichage
+  if (Env.isConfigured) unawaited(Future(() => VisitTracker.track(prefs, Supabase.instance.client)).catchError((Object _) {}));
 
   // Notifications système : canal « Alertes Telima » + autorisation demandée dès le premier lancement
   unawaited(SystemNotifications.init().catchError((Object e) => debugPrint('Notifications : $e')));

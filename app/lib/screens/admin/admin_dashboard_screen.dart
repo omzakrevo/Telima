@@ -46,6 +46,9 @@ final _dailyProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((r
 /// Connexions par jour (utilisateurs connectés, comptés une fois par jour).
 final _activityProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) => ref.watch(adminRepositoryProvider).activity(30));
 
+/// Visiteurs uniques du site web et de l'application (connectés ou non).
+final _visitorsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) => ref.watch(adminRepositoryProvider).visitors(30));
+
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
@@ -55,6 +58,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     final stats = ref.watch(_statsProvider);
     final daily = ref.watch(_dailyProvider);
     final activity = ref.watch(_activityProvider);
+    final visitors = ref.watch(_visitorsProvider);
     final width = MediaQuery.sizeOf(context).width;
     final cols = width > 1300 ? 6 : (width > 900 ? 4 : 2);
 
@@ -63,6 +67,7 @@ class AdminDashboardScreen extends ConsumerWidget {
         ref.invalidate(_statsProvider);
         ref.invalidate(_dailyProvider);
         ref.invalidate(_activityProvider);
+        ref.invalidate(_visitorsProvider);
       },
       child: ListView(padding: const EdgeInsets.all(20), children: [
         Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
@@ -74,6 +79,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ref.invalidate(_statsProvider);
               ref.invalidate(_dailyProvider);
               ref.invalidate(_activityProvider);
+              ref.invalidate(_visitorsProvider);
               ref.invalidate(adminPendingCountsProvider);
             },
             icon: const Icon(Icons.refresh),
@@ -177,6 +183,32 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ],
           ]),
+        ),
+        const SectionTitle('Visiteurs'),
+        AsyncBody<Map<String, dynamic>>(
+          value: visitors,
+          onRetry: () => ref.invalidate(_visitorsProvider),
+          builder: (v) {
+            final days = (v['days'] as List).cast<Map<String, dynamic>>();
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              GridView.count(
+                crossAxisCount: cols > 4 ? 4 : cols,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: cols >= 4 ? 1.9 : 1.4,
+                children: [
+                  StatCard(label: 'Visiteurs aujourd’hui · ${v['today_web']} site, ${v['today_app']} appli', value: '${v['today']}', icon: Icons.visibility_rounded, image: Ico3D.people, color: AppColors.primary),
+                  StatCard(label: 'Visiteurs 7 jours · ${v['d7_web']} site, ${v['d7_app']} appli', value: '${v['d7']}', icon: Icons.visibility_rounded, image: Ico3D.people, color: AppColors.ink),
+                  StatCard(label: 'Visiteurs 30 jours · ${v['d30_web']} site, ${v['d30_app']} appli', value: '${v['d30']}', icon: Icons.visibility_rounded, image: Ico3D.people, color: AppColors.ink),
+                  StatCard(label: 'Visiteurs depuis le début', value: '${v['all_time']}', icon: Icons.public_rounded, image: Ico3D.people, color: AppColors.ink),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _ChartCard(title: 'Visiteurs par jour : site web (vert) et application (orange)', child: _VisitorsChart(rows: days)),
+            ]);
+          },
         ),
         const SectionTitle('Connexions'),
         AsyncBody<Map<String, dynamic>>(
@@ -283,6 +315,49 @@ class _ActivityChart extends StatelessWidget {
           for (var i = 0; i < rows.length; i++)
             BarChartGroupData(x: i, barRods: [
               BarChartRodData(toY: asInt(rows[i]['active']).toDouble(), color: i == rows.length - 1 ? AppColors.accent : AppColors.primary, width: 7),
+            ]),
+        ],
+      ));
+}
+
+class _VisitorsChart extends StatelessWidget {
+  const _VisitorsChart({required this.rows});
+  final List<Map<String, dynamic>> rows;
+
+  @override
+  Widget build(BuildContext context) => BarChart(BarChartData(
+        gridData: const FlGridData(drawVerticalLine: false),
+        borderData: FlBorderData(show: false),
+        barTouchData: BarTouchData(
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipItem: (group, _, rod, _) {
+              final r = rows[group.x];
+              return BarTooltipItem('${_dayLabel(r['day'])}\n${r['web']} site · ${r['app']} appli',
+                  const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12));
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          topTitles: const AxisTitles(),
+          rightTitles: const AxisTitles(),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 24,
+              getTitlesWidget: (v, meta) {
+                final i = v.toInt();
+                if (i < 0 || i >= rows.length || i % 5 != 0) return const SizedBox.shrink();
+                return SideTitleWidget(meta: meta, child: Text(_dayLabel(rows[i]['day']), style: const TextStyle(fontSize: 10)));
+              },
+            ),
+          ),
+        ),
+        barGroups: [
+          for (var i = 0; i < rows.length; i++)
+            BarChartGroupData(x: i, barsSpace: 1, barRods: [
+              BarChartRodData(toY: asInt(rows[i]['web']).toDouble(), color: AppColors.primary, width: 5),
+              BarChartRodData(toY: asInt(rows[i]['app']).toDouble(), color: AppColors.accent, width: 5),
             ]),
         ],
       ));

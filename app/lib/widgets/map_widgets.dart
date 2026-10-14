@@ -51,11 +51,19 @@ Marker pickupMarker(LatLng p) => pinMarker(p, color: AppColors.primary, label: '
 Marker dropoffMarker(LatLng p, {String label = 'Arrivée'}) => pinMarker(p, color: AppColors.danger, label: label, icon: Icons.flag);
 
 /// Cadre la carte sur un ensemble de points.
+/// Départ et arrivée au même endroit (ou points invalides) : un cadrage « boîte » aurait une taille nulle,
+/// donc un zoom infini qui gèle l'écran. Dans ce cas on centre simplement la carte, et le zoom est plafonné.
 MapOptions fitOptions(List<LatLng> points, {double zoom = 14}) {
-  if (points.length < 2) {
-    return MapOptions(initialCenter: points.isEmpty ? const LatLng(12.3714, -1.5197) : points.first, initialZoom: zoom);
+  final valid = points.where((p) => p.latitude.isFinite && p.longitude.isFinite && !(p.latitude == 0 && p.longitude == 0)).toList();
+  const ouagadougou = LatLng(12.3714, -1.5197);
+  if (valid.length < 2) {
+    return MapOptions(initialCenter: valid.isEmpty ? ouagadougou : valid.first, initialZoom: zoom);
+  }
+  final b = LatLngBounds.fromPoints(valid);
+  if ((b.north - b.south).abs() < 0.0008 && (b.east - b.west).abs() < 0.0008) {
+    return MapOptions(initialCenter: b.center, initialZoom: zoom);
   }
   return MapOptions(
-    initialCameraFit: CameraFit.bounds(bounds: LatLngBounds.fromPoints(points), padding: const EdgeInsets.all(56)),
+    initialCameraFit: CameraFit.bounds(bounds: b, padding: const EdgeInsets.all(56), maxZoom: 17),
   );
 }

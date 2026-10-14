@@ -185,6 +185,10 @@ class AdminRepository {
   Future<Map<String, dynamic>> activity(int days) async =>
       Map<String, dynamic>.from(await _client.rpc('admin_activity', params: {'p_days': days}) as Map);
 
+  /// Visiteurs uniques du site web et de l'application (connectés ou non).
+  Future<Map<String, dynamic>> visitors(int days) async =>
+      Map<String, dynamic>.from(await _client.rpc('admin_visitors', params: {'p_days': days}) as Map);
+
   // ---- Paiements & retraits ----
   Future<List<Withdrawal>> withdrawals({WithdrawalStatus? status}) async {
     var q = _client.from('withdrawals').select('*, users!withdrawals_user_id_fkey(full_name, phone)');

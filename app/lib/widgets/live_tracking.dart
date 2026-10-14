@@ -19,11 +19,14 @@ import 'map_widgets.dart';
 /// distance et temps restants. L'itinéraire n'est recalculé qu'en cas de changement
 /// d'étape, de déplacement important (> 300 m) ou toutes les 2 minutes.
 class LiveTrackingMap extends ConsumerStatefulWidget {
-  const LiveTrackingMap({super.key, required this.delivery, this.driverPosition, this.height = 300, this.showStats = true});
+  const LiveTrackingMap({super.key, required this.delivery, this.driverPosition, this.height = 300, this.showStats = true, this.stations = true});
   final Delivery delivery;
   final LatLng? driverPosition;
   final double height;
   final bool showStats;
+
+  /// Stations-service proches de l'itinéraire (requête supplémentaire) ; désactivé pour l'administrateur.
+  final bool stations;
 
   @override
   ConsumerState<LiveTrackingMap> createState() => _LiveTrackingMapState();
@@ -99,6 +102,7 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
 
   /// Stations-service à moins de 1 km de l'itinéraire affiché.
   Future<void> _loadStations() async {
+    if (!widget.stations) return;
     final pts = _route.length >= 2 ? _route : [widget.delivery.pickup, widget.delivery.dropoff];
     final b = LatLngBounds.fromPoints(pts);
     final key = '${b.center.latitude.toStringAsFixed(2)},${b.center.longitude.toStringAsFixed(2)},${pts.length ~/ 20}';
@@ -159,7 +163,7 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
                 dropoffMarker(d.dropoff),
                 if (driver != null) driverMarker(driver),
               ]),
-              if (_showStations)
+              if (widget.stations && _showStations)
                 MarkerLayer(markers: [
                   for (final s in _stations)
                     Marker(
@@ -178,6 +182,7 @@ class _LiveTrackingMapState extends ConsumerState<LiveTrackingMap> {
               osmAttribution(),
             ],
             ),
+            if (widget.stations)
             Positioned(
               top: 8,
               right: 8,

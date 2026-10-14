@@ -285,7 +285,7 @@ class AdminOrderDetailScreen extends ConsumerWidget {
         final left = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           actions,
           const SizedBox(height: 12),
-          LiveTrackingMap(delivery: d, driverPosition: driverPos, height: 320),
+          LiveTrackingMap(delivery: d, driverPosition: driverPos, height: 320, stations: false),
           const SectionTitle('Étapes'),
           StatusTimeline(deliveryId: d.id, current: d.status),
         ]);

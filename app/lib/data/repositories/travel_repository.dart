@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/services/storage_service.dart';
 import '../models/json.dart';
 import '../models/travel.dart';
+import '../models/wallet.dart';
 
 /// Module « Voyages » : recherche de départs, réservation de tickets, espace compagnie, administration.
 class TravelRepository {
@@ -55,6 +56,7 @@ class TravelRepository {
     required String ticketMode,
     String? note,
     Map<String, dynamic>? dropoff,
+    String feeMethod = 'orange_money',
   }) async {
     final row = await _client.rpc('create_travel_booking', params: {
       'p': {
@@ -64,10 +66,22 @@ class TravelRepository {
         'ticket_mode': ticketMode,
         'note': (note ?? '').trim().isEmpty ? null : note!.trim(),
         'dropoff': dropoff,
+        'fee_method': feeMethod,
       },
     });
     return TravelBooking(Map<String, dynamic>.from(row as Map));
   }
+
+  /// Paiement Mobile Money des frais de réservation (500 F), à faire régler par le voyageur.
+  Future<Payment?> feePayment(String? paymentId) async {
+    if (paymentId == null) return null;
+    final row = await _client.from('payments').select().eq('id', paymentId).maybeSingle();
+    return row == null ? null : Payment(Map<String, dynamic>.from(row));
+  }
+
+  /// Nouvel essai (ou changement d'opérateur) pour payer les frais d'une réservation.
+  Future<Payment> retryFee(String bookingId, {String? method}) async => Payment(Map<String, dynamic>.from(
+      await _client.rpc('retry_travel_fee', params: {'p_booking_id': bookingId, 'p_method': method}) as Map));
 
   Future<TravelBooking> booking(String id) async =>
       TravelBooking(await _client.from('travel_bookings').select(_bookingSelect).eq('id', id).single());

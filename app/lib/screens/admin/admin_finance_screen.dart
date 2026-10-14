@@ -105,7 +105,7 @@ class _AdminFinanceScreenState extends ConsumerState<AdminFinanceScreen> {
                               child: ListTile(
                                 leading: Icon(p.method.icon),
                                 title: Text('${fcfa(p.amount)} · ${p.method.label}', style: const TextStyle(fontWeight: FontWeight.w700)),
-                                subtitle: Text('${p.kind == 'topup' ? 'Rechargement portefeuille' : 'Livraison'} · ${formatDateTime(p.createdAt)}'
+                                subtitle: Text('${p.kind == 'topup' ? 'Rechargement portefeuille' : p.kind == 'travel_fee' ? 'Frais de réservation voyage' : 'Livraison'} · ${formatDateTime(p.createdAt)}'
                                     '${p.providerRef != null ? '\nRéf. ${p.providerRef}' : ''}'),
                                 trailing: p.status == PaymentStatus.pending && p.method.isMobileMoney && isAdmin
                                     ? OutlinedButton(onPressed: () => _confirmPayment(p), child: const Text('Confirmer'))

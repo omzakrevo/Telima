@@ -75,6 +75,21 @@ void main() {
     expect(c('approved').suspended, isFalse);
   });
 
+  test('frais de réservation Telima : à payer, en vérification, payés, refusés', () {
+    TravelBooking b(String fee, {String status = 'pending'}) =>
+        TravelBooking({..._booking(status: status), 'service_fee': 500, 'service_fee_status': fee});
+    expect(b('unpaid').feeDue, isTrue);
+    expect(b('failed').feeDue, isTrue);
+    expect(b('verifying').feeDue, isFalse);
+    expect(b('paid').feeDue, isFalse);
+    expect(b('paid').feePaid, isTrue);
+    expect(b('unpaid', status: 'cancelled').feeDue, isFalse);
+    expect(TravelBooking(_booking()).serviceFee, 0);
+    expect(TravelBooking(_booking()).feeDue, isFalse);
+    expect(b('verifying').feeLabel, 'Frais de réservation en cours de vérification');
+    expect(travelServiceFee, 500);
+  });
+
   test('départ complet, annulé, ou trop proche', () {
     expect(TravelTrip(_trip(seats: 0)).bookable, isFalse);
     expect(TravelTrip(_trip(status: 'cancelled')).bookable, isFalse);

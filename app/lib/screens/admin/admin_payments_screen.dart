@@ -113,7 +113,7 @@ class _PaymentCard extends ConsumerWidget {
             Pill(_opLabel(p['method'] as String?), color: p['method'] == 'moov_money' ? const Color(0xFF0066B3) : const Color(0xFFFF7900)),
           ]),
           const SizedBox(height: 4),
-          Text('${user?['full_name'] ?? 'Client'} · ${meta['kind'] == 'topup' ? 'Rechargement du portefeuille' : 'Commande ${code ?? ''}'}'),
+          Text('${user?['full_name'] ?? 'Client'} · ${meta['kind'] == 'topup' ? 'Rechargement du portefeuille' : meta['kind'] == 'travel_fee' ? 'Frais de réservation ${meta['booking_code'] ?? ''}' : 'Commande ${code ?? ''}'}'),
           Text('Envoyé depuis : ${displayPhone(meta['payer_phone'] as String?)}', style: const TextStyle(fontWeight: FontWeight.w600)),
           if (meta['txn_ref'] != null) Text('Réf. indiquée : ${meta['txn_ref']}'),
           Text('Déclaré ${formatDateTime(DateTime.tryParse('${meta['declared_at']}')?.toLocal())}',

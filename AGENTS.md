@@ -70,6 +70,12 @@ messages de remboursement à l'annulation d'un départ, voyageurs prévenus si l
 Migrations en production (les plus récentes) : 13 restaurants, 14 suppression utilisateur, 15 boutiques,
 16 téléphone facultatif (appliquée hors historique), 17 galerie et avis boutiques, 18 voyages, 18b search_path.
 
+Compagnies saisies par l'équipe (admin « Zachari SOME »), approuvées, sans livraison de ticket, d'après les affiches fournies par le propriétaire :
+Rahimo Transport, Saramaya Transport (mêmes départs qu'Elitis), Elitis Express, TSR Express, Rakieta Transport (tarifs normaux, affiches de 2023),
+STAF Transport (tarifs de Rakieta). Départs générés pour 10 jours (à renouveler : aucune génération automatique tant que `pg_cron` n'est pas actif).
+Positions des gares approximatives (centre-ville) à préciser dans Admin → Voyages. Horaires « indicatifs » : confirmés par téléphone par l'équipe.
+Frais de réservation 500 F par réservation payés en Mobile Money : migration `telima_20_voyages_frais_reservation` (voir `docs/module-voyages.md`).
+
 ## À faire ensuite
 1. ~~Relire et fusionner la PR `codex/reprise`~~ : fait (PR n°3 fusionnée dans `main`, version portée à 1.9.0+2011).
 2. ~~Redéployer le site~~ : workflow « Deploy web (LWS) » lancé le 14/10/2026 sur `main` (avant le passage en 1.9.0, sans effet sur le web).

@@ -14,6 +14,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/data_providers.dart';
 import '../../providers/travel_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/payment_flow.dart';
 import '../../widgets/point_form.dart';
 import '../restaurant/restaurant_widgets.dart' show InfoTag, PhotoBox;
 import 'travel_widgets.dart';
@@ -325,6 +326,7 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
   final List<TextEditingController> _names = [TextEditingController()];
   int _passengers = 1;
   String _mode = 'eticket';
+  String _feeMethod = 'orange_money';
   DeliveryPoint? _drop;
   int? _fee;
   double? _km;
@@ -392,8 +394,10 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
     }
     setState(() => _submitting = true);
     try {
-      final b = await ref.read(travelRepositoryProvider).book(
+      final repo = ref.read(travelRepositoryProvider);
+      final b = await repo.book(
             tripId: t.id,
+            feeMethod: _feeMethod,
             passengers: _passengers,
             passengerNames: [for (final c in _names) c.text],
             ticketMode: _mode,
@@ -403,10 +407,13 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
                 : null,
           );
       ref.invalidate(myTravelBookingsProvider);
-      if (mounted) {
-        showSuccess(context, 'Réservation envoyée à ${t.companyName ?? 'la compagnie'}');
-        context.go('/client/voyages/bookings/${b.id}');
+      if (mounted) showSuccess(context, 'Réservation envoyée à ${t.companyName ?? 'la compagnie'}');
+      // Frais de réservation Telima : paiement Mobile Money tout de suite (reprise possible depuis la réservation)
+      if (mounted && b.feePaymentId != null) {
+        final payment = await repo.feePayment(b.feePaymentId);
+        if (payment != null && mounted) await runMobileMoneyPayment(context, ref, payment);
       }
+      if (mounted) context.go('/client/voyages/bookings/${b.id}');
     } catch (e) {
       if (mounted) showError(context, e);
     } finally {
@@ -446,9 +453,14 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
             if (_mode == 'delivery')
               _TotalLine('Livraison du ticket${_km == null ? '' : ' (${km(_km)})'}',
                   _feeLoading ? '…' : (_fee == null ? 'à calculer' : fcfa(_fee))),
+            _TotalLine('Frais de réservation Telima', fcfa(travelServiceFee)),
             const Divider(height: 14),
-            _TotalLine('TOTAL', fcfa(total), bold: true),
-            Text(_mode == 'delivery' ? 'Payé en espèces au livreur, à la remise du ticket' : 'Payé au guichet de la gare, avant le départ',
+            _TotalLine('TOTAL', fcfa(total + travelServiceFee), bold: true),
+            Text(
+                _mode == 'delivery'
+                    ? 'Ticket et livraison payés en espèces au livreur · frais de réservation payés maintenant en Mobile Money'
+                    : 'Ticket payé au guichet avant le départ · frais de réservation payés maintenant en Mobile Money',
+                textAlign: TextAlign.center,
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
             const SizedBox(height: 8),
             BigActionButton(
@@ -559,6 +571,14 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
                 child: Text(friendlyError(_feeError!), style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w600)),
               ),
           ],
+          const SectionTitle('Frais de réservation Telima'),
+          Text('${fcfa(travelServiceFee)} par réservation, payés en Mobile Money. La compagnie confirme votre place dès qu’ils sont reçus.',
+              style: const TextStyle(color: AppColors.textMuted, height: 1.35)),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, children: [
+            ChoiceChip(label: const Text('Orange Money'), selected: _feeMethod == 'orange_money', onSelected: (_) => setState(() => _feeMethod = 'orange_money')),
+            ChoiceChip(label: const Text('Moov Money'), selected: _feeMethod == 'moov_money', onSelected: (_) => setState(() => _feeMethod = 'moov_money')),
+          ]),
           const SectionTitle('Un message pour la compagnie ? (facultatif)'),
           TextField(
             controller: _note,
@@ -748,8 +768,11 @@ class _TravelBookingDetailScreenState extends ConsumerState<TravelBookingDetailS
                       margin: const EdgeInsets.only(top: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(12)),
-                      child: const Text('Vos places sont bloquées. La compagnie va confirmer votre réservation : vous recevrez une notification.',
-                          style: TextStyle(height: 1.35)),
+                      child: Text(
+                          b.feeDue
+                              ? 'Vos places sont bloquées. Payez les frais de réservation (${fcfa(b.serviceFee)}) en Mobile Money : la compagnie confirmera ensuite votre place.'
+                              : 'Vos places sont bloquées. La compagnie va confirmer votre réservation : vous recevrez une notification.',
+                          style: const TextStyle(height: 1.35)),
                     ),
                   if ((b.companyMessage ?? '').isNotEmpty) ...[
                     const SectionTitle('Message de la compagnie'),
@@ -771,6 +794,28 @@ class _TravelBookingDetailScreenState extends ConsumerState<TravelBookingDetailS
                     Text(fcfa(b.total), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.primaryDark)),
                   ]),
                   Text(b.paymentHint, style: const TextStyle(color: AppColors.textMuted)),
+                  if (b.serviceFee > 0) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      Expanded(child: Text(b.feeLabel, style: TextStyle(fontWeight: FontWeight.w700, color: b.feePaid ? AppColors.primary : null))),
+                      Text(fcfa(b.serviceFee), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    ]),
+                    if (b.feeDue && isCustomer)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                          onPressed: () async {
+                            final payment = await ref.read(travelRepositoryProvider).retryFee(b.id);
+                            if (!context.mounted) return;
+                            await runMobileMoneyPayment(context, ref, payment);
+                            ref.invalidate(travelBookingProvider(b.id));
+                          },
+                          icon: const Icon(Icons.phone_android_rounded),
+                          label: Text('PAYER LES FRAIS (${fcfa(b.serviceFee)})'),
+                        ),
+                      ),
+                  ],
                   if (b.isDelivery && b.dropoffAddress != null) ...[
                     const SectionTitle('Ticket livré à'),
                     Text(b.dropoffAddress!),

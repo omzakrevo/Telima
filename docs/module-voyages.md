@@ -31,6 +31,12 @@ Deux façons de gérer une compagnie :
 * **Réservations sans réponse** : une réservation non confirmée est annulée au bout de **2 h** (ou dès que le départ est passé), les places
   sont libérées et le voyageur est prévenu. Un voyageur ne peut pas avoir plus de **3 réservations en attente**. Le nettoyage tourne toutes
   les 15 min si l'extension `pg_cron` est active, sinon à la prochaine réservation sur le même départ.
+* **Frais de réservation Telima** : **500 F par réservation** (pas par voyageur), payés en **Mobile Money** (Orange Money ou Moov Money)
+  avec le circuit « Paiement manuel » existant : le voyageur déclare son paiement, l'équipe Telima le vérifie (*Paiements à vérifier → Argent reçu*).
+  Tant que les frais ne sont pas reçus, la compagnie (ou l'équipe) **ne peut pas confirmer** la réservation. Le ticket, lui, se retire et se paie
+  au guichet de la compagnie. Montant : fonction SQL `telima.travel_service_fee()` (et constante `travelServiceFee` côté application).
+  L'équipe peut enregistrer des frais reçus hors application avec le bouton **Frais reçus** (action `fee_received`).
+  Les frais ne sont pas remboursés automatiquement en cas de refus ou d'annulation (à décider).
 * **Délais** : réservation possible jusqu'à 15 min avant le départ ; livraison du ticket seulement si le départ est dans plus de 3 h.
 * **Annulation par le voyageur** : tant que ce n'est pas confirmé, ou pour un e-ticket confirmé jusqu'à 2 h avant le départ.
   Après, il appelle la compagnie (bouton dans l'application).

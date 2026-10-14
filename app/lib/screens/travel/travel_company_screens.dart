@@ -523,7 +523,8 @@ class _BookingsTabState extends ConsumerState<_BookingsTab> with AutomaticKeepAl
                   const SizedBox(height: 4),
                   Text('${b.trip?.route ?? ''} · ${formatDateTime(b.trip?.departureAt)}', style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text('${b.passengers} place${b.passengers > 1 ? 's' : ''} · ${fcfa(b.ticketsTotal)}'
-                      '${b.isDelivery ? ' · ticket à livrer' : ' · e-ticket'}${b.paid ? ' · payé' : ''}',
+                      '${b.isDelivery ? ' · ticket à livrer' : ' · e-ticket'}${b.paid ? ' · payé' : ''}'
+                      '${b.serviceFee > 0 ? ' · ${b.feeLabel.toLowerCase()}' : ''}',
                       style: const TextStyle(color: AppColors.textMuted)),
                   const SizedBox(height: 4),
                   Row(children: [
@@ -536,6 +537,8 @@ class _BookingsTabState extends ConsumerState<_BookingsTab> with AutomaticKeepAl
                   if (b.isDelivery && b.dropoffAddress != null) Text('Livraison : ${b.dropoffAddress}', style: const TextStyle(color: AppColors.textMuted)),
                   const SizedBox(height: 8),
                   Wrap(spacing: 8, runSpacing: 6, children: [
+                    if (b.status == 'pending' && b.feeDue && (ref.watch(currentUserProvider)?.role.isStaff ?? false))
+                      OutlinedButton(onPressed: () => _act(b, 'fee_received', 'Frais de réservation enregistrés'), child: const Text('Frais reçus')),
                     if (b.status == 'pending') ...[
                       FilledButton.icon(onPressed: () => _confirm(b), icon: const Icon(Icons.check_rounded), label: const Text('Confirmer')),
                       OutlinedButton(

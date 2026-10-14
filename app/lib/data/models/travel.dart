@@ -21,6 +21,9 @@ String companyShareLink(String slug) => '$kSiteUrl/v/$slug';
 /// à partir du seul code ; la compagnie peut aussi saisir le code à la main.
 String eticketQrData(String code, String token) => 'TELIMA-VOY:$code:$token';
 
+/// Frais de réservation Telima (FCFA par réservation) : même valeur que `telima.travel_service_fee()` côté serveur.
+const int travelServiceFee = 500;
+
 class TransportCompany {
   TransportCompany(Json j)
       : id = '${j['id']}',
@@ -142,6 +145,9 @@ class TravelBooking {
         ticketsTotal = asInt(j['tickets_total']),
         deliveryFee = asInt(j['delivery_fee']),
         total = asInt(j['total']),
+        serviceFee = asInt(j['service_fee']),
+        serviceFeeStatus = asStr(j['service_fee_status']) ?? 'none',
+        feePaymentId = asStr(j['fee_payment_id']),
         paymentStatus = asStr(j['payment_status']) ?? 'unpaid',
         seatNumbers = asStr(j['seat_numbers']),
         ticketNumber = asStr(j['ticket_number']),
@@ -175,6 +181,10 @@ class TravelBooking {
   final int ticketsTotal;
   final int deliveryFee;
   final int total;
+  /// Frais de réservation Telima, payés par Mobile Money (`none`, `unpaid`, `verifying`, `paid`, `failed`).
+  final int serviceFee;
+  final String serviceFeeStatus;
+  final String? feePaymentId;
   final String paymentStatus;
   final String? seatNumbers;
   final String? ticketNumber;
@@ -197,6 +207,17 @@ class TravelBooking {
   bool get hasETicket => const {'confirmed', 'out_for_delivery', 'delivered', 'boarded'}.contains(status);
   String get qrData => eticketQrData(code, qrToken);
   bool get paid => paymentStatus == 'paid';
+
+  /// Frais de réservation encore à payer (ou paiement refusé) : le voyageur doit payer pour que la compagnie confirme.
+  bool get feeDue => serviceFee > 0 && (serviceFeeStatus == 'unpaid' || serviceFeeStatus == 'failed') && !failed;
+  bool get feePaid => serviceFeeStatus == 'paid';
+  String get feeLabel => switch (serviceFeeStatus) {
+        'paid' => 'Frais de réservation payés',
+        'verifying' => 'Frais de réservation en cours de vérification',
+        'failed' => 'Paiement des frais refusé : à refaire',
+        'unpaid' => 'Frais de réservation à payer',
+        _ => '',
+      };
 
   /// Le client peut annuler tant que ce n'est pas confirmé, ou un e-ticket confirmé jusqu'à 2 h avant le départ.
   bool get customerCanCancel =>

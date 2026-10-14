@@ -128,6 +128,13 @@ Pour publier sur le Play Store, configurez une clé de signature
 
 ---
 
+## Module Voyages (tickets de car)
+
+Les compagnies publient leurs départs (**Accueil → Ma compagnie**, ou saisies par l'administration pour celles qui ne sont pas inscrites).
+Le voyageur réserve (**Accueil → Voyages**), la compagnie confirme, il reçoit un e-ticket avec QR code ; un livreur Telima peut aussi
+lui apporter le ticket papier (paiement à la livraison). Lien public d'une compagnie : `https://telimatchi.com/v/voyages-du-kadiogo`.
+Détails : [docs/module-voyages.md](docs/module-voyages.md).
+
 ## Module Boutiques (vêtements, chaussures, accessoires)
 
 Même principe que les restaurants : **Accueil → Ma boutique**, catalogue d'articles avec tailles, couleurs et stock, lien

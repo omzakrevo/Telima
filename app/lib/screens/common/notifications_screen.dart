@@ -49,6 +49,14 @@ void openNotification(BuildContext context, WidgetRef ref, AppNotification n) {
     }
   } else if (n.type.startsWith('shop_order') && n.data['shop_order_id'] != null) {
     context.push('/client/shops/orders/${n.data['shop_order_id']}');
+  } else if (n.type == 'company_new' && (role?.isStaff ?? false)) {
+    context.push('/admin/transport');
+  } else if (n.type == 'travel_booking_new' || (n.type == 'travel_booking_cancelled' && n.data['company_id'] != null) ||
+      n.type == 'company_status') {
+    final id = n.data['company_id']?.toString();
+    if (id != null) context.push('/transport/$id');
+  } else if (n.type.startsWith('travel_booking') && n.data['travel_booking_id'] != null) {
+    context.push('/client/voyages/bookings/${n.data['travel_booking_id']}');
   } else if (n.deliveryId != null) {
     context.push(deliveryRouteFor(role, n.deliveryId!));
   }

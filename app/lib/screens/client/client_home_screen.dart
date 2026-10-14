@@ -246,6 +246,31 @@ class ClientHomeScreen extends ConsumerWidget {
                 ),
               ]),
             ),
+            const SizedBox(height: 10),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 300),
+              child: Row(children: [
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.directions_bus_rounded,
+                    title: 'Voyages',
+                    caption: 'Réserver un ticket',
+                    color: AppColors.accent,
+                    onTap: () => context.push('/client/voyages'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MainAction(
+                    icon: Icons.airport_shuttle_rounded,
+                    title: 'Ma compagnie',
+                    caption: 'Départs · réservations',
+                    color: AppColors.primaryDark,
+                    onTap: () => context.push('/transport'),
+                  ),
+                ),
+              ]),
+            ),
             const SectionTitle('Services'),
             GridView.count(
               crossAxisCount: wide ? 6 : 3,

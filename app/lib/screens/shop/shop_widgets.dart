@@ -6,6 +6,7 @@ import '../../config/theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/shop.dart';
 import '../../widgets/common.dart';
+import '../../widgets/qr_link_sheet.dart';
 
 /// Photo réseau avec repli (icône) si l'image est absente ou ne charge pas.
 class ShopPhotoBox extends StatelessWidget {
@@ -78,6 +79,9 @@ Future<void> shareShopLink(BuildContext context, Shop r) async {
   }
 }
 
+Future<void> showShopQr(BuildContext context, Shop r) =>
+    showQrLinkSheet(context, title: r.name, link: shopShareLink(r.slug), slug: r.slug);
+
 Future<void> copyShopLink(BuildContext context, Shop r) async {
   await Clipboard.setData(ClipboardData(text: shopShareLink(r.slug)));
   if (context.mounted) showSuccess(context, 'Lien copié');
@@ -123,6 +127,15 @@ class ShopShareLinkCard extends StatelessWidget {
             ),
           ),
         ]),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => showShopQr(context, shop),
+            icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+            label: const Text('QR code à télécharger'),
+          ),
+        ),
       ]),
     );
   }

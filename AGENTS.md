@@ -60,6 +60,9 @@ Fait, testé (`flutter analyze` propre, 45 tests verts) :
    Migration **`telima_18_voyages` + `telima_18b_voyages_search_path` déjà appliquées en production** (14/10/2026) ;
    scénario complet vérifié sur la base réelle dans une transaction annulée. Aucune compagnie ni départ réel n'existe encore.
 3. **Vidéo Boutiques** 9:16 avec voix off (`video/src/BoutiqueVideo.tsx`, `video/public/voix-off-boutiques.mp3`, 35 s).
+   **Vidéo Voyages** 9:16 (`TicketsVertical`, `video/src/TicketsVideo.tsx`, voix off « Léo » `video/public/voix-off-tickets.mp3`, 44 s) avec les vrais écrans de l'application
+   (`video/public/ecrans/`, captures produites par `video/capture/video_shots_test.dart`). Rendu : `cd video && npm install && npm run render:tickets`
+   (dans un bac à sable : ajouter `--browser-executable=<chemin de headless_shell>`).
 
 Durcissement après relecture (migration **`telima_19_voyages_durcissement`**, **appliquée en production le 14/10/2026** en deux temps :
 `telima_19_voyages_durcissement` puis `telima_19b_voyages_trigger_horaire` pour le déclencheur `trg_travel_trips_notify_move` — le fichier du dépôt contient les deux) :

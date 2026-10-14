@@ -24,7 +24,7 @@ import QRCode from "qrcode";
  */
 
 // Police chargée depuis public/fonts (mêmes fichiers que l'application) : rendu possible sans Internet.
-const fontFamily = "Plus Jakarta Sans Local";
+export const fontFamily = "Plus Jakarta Sans Local";
 for (const weight of ["500", "700", "800"]) {
   loadFont({ family: fontFamily, url: staticFile(`fonts/PlusJakartaSans-${weight}.ttf`), weight, format: "truetype" });
 }
@@ -37,7 +37,7 @@ const SHOP_LINK = "telimatchi.com/b/awa-style";
 /** Le QR code affiché mène au site (la boutique « Awa Style » est fictive). */
 const QR_TARGET = "https://telimatchi.com";
 
-const C = {
+export const C = {
   green: "#3D8B5F",
   greenDark: "#2B6B48",
   deep: "#1D4F35",
@@ -58,19 +58,19 @@ export const BOUTIQUE_TOTAL_FRAMES = s(CUTS[CUTS.length - 1]);
 
 // ───────────────────────── Briques communes ─────────────────────────
 
-const usePop = (delay = 0, damping = 12, stiffness = 160) => {
+export const usePop = (delay = 0, damping = 12, stiffness = 160) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   return spring({ frame: frame - delay, fps, config: { damping, stiffness } });
 };
 
-const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+export const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 
 const typed = (text: string, frame: number, start: number, perChar = 2) =>
   text.slice(0, Math.max(0, Math.min(text.length, Math.floor((frame - start) / perChar))));
 
 /** Fond continu : dégradé vert, carrés translucides qui dérivent, petit logo en haut (comme une signature). */
-const Backdrop: React.FC = () => {
+export const Backdrop: React.FC = () => {
   const frame = useCurrentFrame();
   const squares = [
     { x: 90, y: 300, size: 70, sp: 0.6, r: 12 },
@@ -108,7 +108,7 @@ const Backdrop: React.FC = () => {
 };
 
 /** Sortie de scène commune : léger zoom + flou + fondu sur les 6 dernières images. */
-const Out: React.FC<{ frames: number; children: React.ReactNode }> = ({ frames, children }) => {
+export const Out: React.FC<{ frames: number; children: React.ReactNode }> = ({ frames, children }) => {
   const frame = useCurrentFrame();
   const k = interpolate(frame, [frames - 6, frames], [0, 1], clamp);
   return (
@@ -119,7 +119,7 @@ const Out: React.FC<{ frames: number; children: React.ReactNode }> = ({ frames, 
 };
 
 /** Texte qui apparaît mot par mot (montée + flou → net). */
-const Words: React.FC<{
+export const Words: React.FC<{
   text: string;
   top: number;
   size?: number;
@@ -163,7 +163,7 @@ const Words: React.FC<{
 };
 
 /** Mot mis en avant : pastille blanche, texte vert. */
-const Highlight: React.FC<{ text: string; top: number; delay: number; size?: number; bg?: string; color?: string; rotate?: number }> = ({
+export const Highlight: React.FC<{ text: string; top: number; delay: number; size?: number; bg?: string; color?: string; rotate?: number }> = ({
   text,
   top,
   delay,
@@ -195,7 +195,7 @@ const Highlight: React.FC<{ text: string; top: number; delay: number; size?: num
   );
 };
 
-const Icon3D: React.FC<{ name: string; size: number; delay?: number; float?: number; style?: React.CSSProperties }> = ({ name, size, delay = 0, float = 0, style }) => {
+export const Icon3D: React.FC<{ name: string; size: number; delay?: number; float?: number; style?: React.CSSProperties }> = ({ name, size, delay = 0, float = 0, style }) => {
   const frame = useCurrentFrame();
   const pop = usePop(delay);
   const dy = float ? Math.sin((frame + delay * 3) / 14) * float : 0;
@@ -305,7 +305,7 @@ const QrSvg: React.FC<{ size: number }> = ({ size }) => {
 };
 
 /** Ressort calculé à partir d'une image donnée (pas un hook : utilisable dans une boucle ou une expression). */
-const popAt = (frame: number, delay: number) => spring({ frame: frame - delay, fps: BOUTIQUE_FPS, config: { damping: 12, stiffness: 170 } });
+export const popAt = (frame: number, delay: number) => spring({ frame: frame - delay, fps: BOUTIQUE_FPS, config: { damping: 12, stiffness: 170 } });
 
 // ───────────────────────── Scènes ─────────────────────────
 

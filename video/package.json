@@ -7,6 +7,8 @@
     "render": "remotion render src/index.ts RestaurantsVertical out/telima-restaurants-9x16.mp4",
     "still": "remotion still src/index.ts RestaurantsVertical out/apercu.png --frame=300",
     "render:boutiques": "remotion render src/index.ts BoutiquesVertical out/telima-boutiques-9x16.mp4",
+    "render:tickets": "remotion render src/index.ts TicketsVertical out/telima-tickets-9x16.mp4",
+    "still:tickets": "remotion still src/index.ts TicketsVertical out/apercu-tickets.png --frame=300",
     "still:boutiques": "remotion still src/index.ts BoutiquesVertical out/apercu-boutiques.png --frame=600"
   },
   "dependencies": {

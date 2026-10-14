@@ -1893,7 +1893,7 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
             const SizedBox(height: 8),
             Text(
               _mode == 'eticket'
-                  ? 'Après confirmation par la compagnie, votre e-ticket (QR code) s’affiche ici. Présentez-le au guichet et payez avant le départ.'
+                  ? 'Après confirmation par la compagnie, présentez-vous au guichet avec votre nom, votre signature et la ville de départ : on vous remet votre ticket, rien à payer sur place. Votre e-ticket (QR code) reste ici comme preuve.'
                   : 'Après confirmation, un livreur Telima récupère votre ticket papier à la gare et vous l’apporte. Vous gardez aussi l’e-ticket.',
               style: const TextStyle(color: travelMuted, height: 1.35),
             ),

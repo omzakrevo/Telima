@@ -5,11 +5,16 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts RestaurantsVertical out/telima-restaurants-9x16.mp4",
-    "still": "remotion still src/index.ts RestaurantsVertical out/apercu.png --frame=300"
+    "still": "remotion still src/index.ts RestaurantsVertical out/apercu.png --frame=300",
+    "render:boutiques": "remotion render src/index.ts BoutiquesVertical out/telima-boutiques-9x16.mp4",
+    "still:boutiques": "remotion still src/index.ts BoutiquesVertical out/apercu-boutiques.png --frame=600"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.534",
+    "@remotion/fonts": "^4.0.534",
     "@remotion/google-fonts": "^4.0.534",
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "remotion": "^4.0.534"

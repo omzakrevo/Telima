@@ -61,10 +61,11 @@ Fait, testé (`flutter analyze` propre, 45 tests verts) :
    scénario complet vérifié sur la base réelle dans une transaction annulée. Aucune compagnie ni départ réel n'existe encore.
 3. **Vidéo Boutiques** 9:16 avec voix off (`video/src/BoutiqueVideo.tsx`, `video/public/voix-off-boutiques.mp3`, 35 s).
 
-Durcissement après relecture (migration **`telima_19_voyages_durcissement`**, écrite et testée dans une transaction annulée, **pas encore appliquée en production**) :
+Durcissement après relecture (migration **`telima_19_voyages_durcissement`**, **appliquée en production le 14/10/2026** en deux temps :
+`telima_19_voyages_durcissement` puis `telima_19b_voyages_trigger_horaire` pour le déclencheur `trg_travel_trips_notify_move` — le fichier du dépôt contient les deux) :
 inscription d'une compagnie « en attente » jusqu'à validation par l'équipe, expiration des réservations non confirmées après 2 h (max 3 en attente par client),
 messages de remboursement à l'annulation d'un départ, voyageurs prévenus si l'horaire change, contrôle d'un ticket par son seul numéro.
-Le déclencheur `trg_travel_trips_notify_move` n'a pas pu être testé (la requête de test a expiré) : à vérifier à l'application.
+`pg_cron` n'est pas activé sur le projet : l'expiration se fait à la prochaine réservation sur le même départ (activer l'extension puis relancer le bloc `cron.schedule` de la migration pour l'automatiser).
 
 Migrations en production (les plus récentes) : 13 restaurants, 14 suppression utilisateur, 15 boutiques,
 16 téléphone facultatif (appliquée hors historique), 17 galerie et avis boutiques, 18 voyages, 18b search_path.

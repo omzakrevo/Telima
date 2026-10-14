@@ -10,9 +10,9 @@ on:
   workflow_dispatch:
     inputs:
       htaccess:
-        description: "Envoyer aussi une règle .htaccess (sauvegarde l'ancien en .htaccess.bak)"
+        description: "Envoyer aussi la règle .htaccess (compression et cache ; sauvegarde l'ancien en .htaccess.bak)"
         type: boolean
-        default: false
+        default: true
 
 jobs:
   deploy:

@@ -45,16 +45,23 @@ HTACCESS = """# Telima : réécriture pour l'application web, MIME, compression 
 <IfModule mod_mime.c>
   AddType application/wasm .wasm
   AddType application/json .json
+  AddType text/javascript .js .mjs
+  AddType font/ttf .ttf
+  AddType font/otf .otf
 </IfModule>
+# Compression : main.dart.js passe de 5,7 Mo à environ 1,6 Mo (la différence entre 10 secondes et 1 minute sur un téléphone)
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json application/wasm image/svg+xml
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/x-javascript application/json application/wasm image/svg+xml font/ttf font/otf application/x-font-ttf application/octet-stream text/plain
 </IfModule>
 <IfModule mod_headers.c>
-  <FilesMatch "\\.(wasm|otf|ttf|png|webp|ico)$">
-    Header set Cache-Control "public, max-age=604800"
-  </FilesMatch>
-  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|sw\\.js)$">
+  # Le fichier principal et les pages se revalident à chaque visite (réponse « inchangé » en une fraction de seconde
+  # grâce à l'ETag) au lieu de se retélécharger en entier : plus de « no-store ».
+  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|main\\.dart\\.mjs|sw\\.js)$">
     Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Polices, images et icônes : gardées 30 jours
+  <FilesMatch "\\.(wasm|otf|ttf|png|webp|ico|jpg|jpeg|svg)$">
+    Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 </IfModule>
 <IfModule mod_rewrite.c>

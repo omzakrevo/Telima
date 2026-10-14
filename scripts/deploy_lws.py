@@ -92,7 +92,10 @@ def main() -> None:
     base = os.environ.get("LWS_DIR") or "."
     port = int(os.environ.get("LWS_PORT") or "22")
     if not (host and user and (password or key)):
-        sys.exit("Variables manquantes : LWS_HOST, LWS_USER et LWS_PASS (ou LWS_KEY). Voir l'en-tête du script.")
+        manquantes = [n for n, v in (("LWS_HOST", host), ("LWS_USER", user)) if not v]
+        if not (password or key):
+            manquantes.append("LWS_PASS (ou LWS_KEY)")
+        sys.exit("Variables manquantes ou vides : " + ", ".join(manquantes) + ". Voir l'en-tête du script.")
 
     files = sorted(
         p.relative_to(WEB).as_posix()

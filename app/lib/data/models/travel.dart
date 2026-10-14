@@ -56,7 +56,10 @@ class TransportCompany {
   final List<TravelTrip> trips;
 
   String? get logoUrl => travelPhotoUrl(logoPath);
-  bool get suspended => status != 'approved';
+  /// Suspendue ou refusée par l'équipe Telima : lien et départs invisibles.
+  bool get suspended => status == 'suspended' || status == 'rejected';
+  /// Inscrite par la compagnie, pas encore validée par l'équipe Telima.
+  bool get pendingApproval => status == 'pending';
   /// Compagnie saisie et gérée par l'équipe Telima (pas encore de compte propriétaire).
   bool get managedByTelima => ownerId == null;
   String get subtitle => [if ((city ?? '').isNotEmpty) city!, if ((stationAddress ?? '').isNotEmpty) stationAddress!].join(' · ');

@@ -7,6 +7,7 @@ S'il le souhaite, un **livreur Telima lui apporte le ticket papier** : il paie a
 
 Deux façons de gérer une compagnie :
 * **La compagnie elle-même** : elle s'inscrit depuis l'application (*Accueil → Ma compagnie*) et gère ses départs et ses réservations.
+  Son inscription est **en attente** : l'équipe Telima la valide (*Admin → Voyages → Valider* ou *Refuser*) avant que le lien et les départs soient publics.
 * **L'équipe Telima** : pour une compagnie pas encore inscrite, l'administration la saisit (*Admin → Voyages → Saisir une compagnie*),
   publie ses départs et confirme les réservations à sa place (après accord par téléphone avec la compagnie).
   Elle peut ensuite la confier au compte de la compagnie (*Confier à un compte*, par numéro de téléphone).
@@ -27,6 +28,9 @@ Deux façons de gérer une compagnie :
   que par les fonctions du serveur ; la compagnie ne peut pas descendre le total sous le nombre de places déjà réservées.
 * **Prix** : relu côté serveur (prix du départ × nombre de voyageurs). Frais de livraison du ticket = tarif « document » de Telima
   (moto), de la gare au voyageur, dans la distance maximale fixée par la compagnie (20 km par défaut).
+* **Réservations sans réponse** : une réservation non confirmée est annulée au bout de **2 h** (ou dès que le départ est passé), les places
+  sont libérées et le voyageur est prévenu. Un voyageur ne peut pas avoir plus de **3 réservations en attente**. Le nettoyage tourne toutes
+  les 15 min si l'extension `pg_cron` est active, sinon à la prochaine réservation sur le même départ.
 * **Délais** : réservation possible jusqu'à 15 min avant le départ ; livraison du ticket seulement si le départ est dans plus de 3 h.
 * **Annulation par le voyageur** : tant que ce n'est pas confirmé, ou pour un e-ticket confirmé jusqu'à 2 h avant le départ.
   Après, il appelle la compagnie (bouton dans l'application).
@@ -41,7 +45,7 @@ Deux façons de gérer une compagnie :
 * **Notifications** : nouvelle réservation (au propriétaire de la compagnie, ou à l'équipe Telima si elle la gère), confirmation,
   refus, annulation, départ annulé, livraison du ticket annulée.
 
-## Base de données (migration `telima_18_voyages`, appliquée en production le 14/10/2026)
+## Base de données (migrations `telima_18_voyages` puis `telima_19_voyages_durcissement`)
 Tables : `transport_companies`, `travel_trips`, `travel_bookings` (statuts `pending`, `confirmed`, `out_for_delivery`, `delivered`,
 `boarded`, `rejected`, `cancelled`). Compartiment public `telima-voyages` (logos).
 

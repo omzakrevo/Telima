@@ -63,6 +63,18 @@ void main() {
     expect(travelDuration(120), '2 h');
   });
 
+  test('statut d\'une compagnie : en attente, suspendue, refusée', () {
+    TransportCompany c(String status) => TransportCompany({
+          'id': 'c1', 'slug': 'x', 'name': 'X', 'lat': 12.0, 'lng': -1.0, 'status': status, 'trips': const [],
+        });
+    expect(c('pending').pendingApproval, isTrue);
+    expect(c('pending').suspended, isFalse);
+    expect(c('suspended').suspended, isTrue);
+    expect(c('rejected').suspended, isTrue);
+    expect(c('approved').pendingApproval, isFalse);
+    expect(c('approved').suspended, isFalse);
+  });
+
   test('départ complet, annulé, ou trop proche', () {
     expect(TravelTrip(_trip(seats: 0)).bookable, isFalse);
     expect(TravelTrip(_trip(status: 'cancelled')).bookable, isFalse);

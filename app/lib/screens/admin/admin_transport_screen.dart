@@ -15,12 +15,12 @@ class AdminTransportScreen extends ConsumerWidget {
   const AdminTransportScreen({super.key});
 
   Future<void> _setStatus(BuildContext context, WidgetRef ref, TransportCompany c, String status) async {
-    if (status == 'suspended') {
+    if (status == 'suspended' || status == 'rejected') {
       final ok = await confirmDialog(
         context,
-        title: 'Suspendre « ${c.name} » ?',
+        title: status == 'rejected' ? 'Refuser « ${c.name} » ?' : 'Suspendre « ${c.name} » ?',
         message: 'Son lien et ses départs ne seront plus visibles ; plus aucune réservation possible.',
-        confirmLabel: 'Suspendre',
+        confirmLabel: status == 'rejected' ? 'Refuser' : 'Suspendre',
         danger: true,
       );
       if (!ok || !context.mounted) return;
@@ -79,13 +79,17 @@ class AdminTransportScreen extends ConsumerWidget {
                       'link' => copyCompanyLink(context, c),
                       'owner' => _setOwner(context, ref, c),
                       'suspend' => _setStatus(context, ref, c, 'suspended'),
+                      'reject' => _setStatus(context, ref, c, 'rejected'),
                       _ => _setStatus(context, ref, c, 'approved'),
                     },
                     itemBuilder: (_) => [
                       const PopupMenuItem(value: 'manage', child: Text('Gérer (départs, réservations)')),
                       const PopupMenuItem(value: 'link', child: Text('Copier le lien')),
                       PopupMenuItem(value: 'owner', child: Text(c.managedByTelima ? 'Confier à un compte' : 'Changer de responsable')),
-                      if (c.suspended)
+                      if (c.pendingApproval) ...[
+                        const PopupMenuItem(value: 'restore', child: Text('Valider')),
+                        const PopupMenuItem(value: 'reject', child: Text('Refuser')),
+                      ] else if (c.suspended)
                         const PopupMenuItem(value: 'restore', child: Text('Rétablir'))
                       else
                         const PopupMenuItem(value: 'suspend', child: Text('Suspendre')),

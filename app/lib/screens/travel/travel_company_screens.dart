@@ -92,7 +92,9 @@ class CompanyTile extends StatelessWidget {
               Text(c.subtitle.isEmpty ? 'Compagnie de transport' : c.subtitle, style: const TextStyle(color: AppColors.textMuted)),
             ]),
           ),
-          if (c.suspended)
+          if (c.pendingApproval)
+            const InfoTag('À valider', color: AppColors.accent)
+          else if (c.suspended)
             const InfoTag('Suspendue', color: AppColors.danger)
           else
             InfoTag(c.acceptingBookings ? 'Ouverte' : 'Fermée', color: c.acceptingBookings ? AppColors.primary : AppColors.textMuted),
@@ -221,7 +223,9 @@ class _CompanyFormScreenState extends ConsumerState<CompanyFormScreen> {
         ref.invalidate(myCompaniesProvider);
         ref.invalidate(adminCompaniesProvider);
         if (mounted) {
-          showSuccess(context, 'Compagnie enregistrée ! Ajoutez vos départs puis partagez votre lien.');
+          showSuccess(context, widget.asAdmin
+              ? 'Compagnie enregistrée ! Ajoutez ses départs puis partagez son lien.'
+              : 'Compagnie enregistrée ! Elle sera visible dès sa validation par l’équipe Telima ; préparez vos départs en attendant.');
           context.pushReplacement('/transport/${c.id}');
         }
       }
@@ -359,6 +363,14 @@ class CompanyManageScreen extends ConsumerWidget {
             return Constrained(
               maxWidth: 760,
               child: Column(children: [
+                if (company.pendingApproval)
+                  Container(
+                    width: double.infinity,
+                    color: AppColors.accent.withValues(alpha: 0.12),
+                    padding: const EdgeInsets.all(12),
+                    child: const Text('Inscription en attente de validation par l’équipe Telima : votre lien et vos départs seront visibles dès qu’elle sera validée.',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
                 if (company.suspended)
                   Container(
                     width: double.infinity,
@@ -955,18 +967,11 @@ class _ControlTabState extends ConsumerState<_ControlTab> {
     super.dispose();
   }
 
-  /// « 12 » → `VOY-<année>-000012` ; le reste (code complet ou contenu du QR) est envoyé tel quel.
-  String _normalize(String v) {
-    final s = v.trim();
-    if (RegExp(r'^\d{1,6}$').hasMatch(s)) return 'VOY-${DateTime.now().year}-${s.padLeft(6, '0')}';
-    return s;
-  }
-
   Future<void> _check() async {
     if (_code.text.trim().isEmpty) return;
     setState(() => _busy = true);
     try {
-      final r = await ref.read(travelRepositoryProvider).checkTicket(widget.companyId, _normalize(_code.text));
+      final r = await ref.read(travelRepositoryProvider).checkTicket(widget.companyId, _code.text);
       if (mounted) setState(() => _result = r);
     } catch (e) {
       if (mounted) showError(context, e);

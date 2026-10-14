@@ -1508,8 +1508,8 @@ class _CompanyViewState extends State<_CompanyView> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Réservez ici (frais de réservation Telima : ${fcfa(travelServiceFee)}). Au guichet${(c.stationAddress ?? '').isEmpty ? '' : ' de ${c.stationAddress}'}, '
-                                'présentez-vous avec votre nom, votre signature et la ville : on vous remet votre ticket.',
+                                'Réservez et payez ici en Mobile Money (billets + ${fcfa(travelServiceFee)} de frais de réservation Telima). Au guichet${(c.stationAddress ?? '').isEmpty ? '' : ' de ${c.stationAddress}'}, '
+                                'présentez-vous avec votre nom, votre signature et la ville : on vous remet votre ticket, rien à payer sur place.',
                                 style: const TextStyle(height: 1.4),
                               ),
                             ),
@@ -1735,8 +1735,6 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
     if (_mode == 'delivery' && !t.canDeliverTicket) _mode = 'eticket';
     final maxSeats = t.seatsAvailable.clamp(0, 10);
     final tickets = t.price * _passengers;
-    final fee = _mode == 'delivery' ? (_fee ?? 0) : 0;
-    final total = tickets + fee;
     final addresses = ref.watch(savedAddressesProvider(null)).value ?? const [];
 
     return Scaffold(
@@ -1755,26 +1753,28 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
                 '$_passengers billet${_passengers > 1 ? 's' : ''} × ${fcfa(t.price)}',
                 fcfa(tickets),
               ),
+              _TotalLine('Frais de réservation Telima', fcfa(travelServiceFee)),
+              const Divider(height: 14),
+              _TotalLine(
+                'À PAYER MAINTENANT',
+                fcfa(tickets + travelServiceFee),
+                bold: true,
+              ),
               if (_mode == 'delivery')
                 _TotalLine(
-                  'Livraison du ticket${_km == null ? '' : ' (${km(_km)})'}',
+                  'Livraison du ticket${_km == null ? '' : ' (${km(_km)})'} · payée au livreur',
                   _feeLoading
                       ? '…'
                       : (_fee == null ? 'à calculer' : fcfa(_fee)),
                 ),
-              _TotalLine('Frais de réservation Telima', fcfa(travelServiceFee)),
-              const Divider(height: 14),
-              _TotalLine('TOTAL', fcfa(total + travelServiceFee), bold: true),
-              Text(
-                _mode == 'delivery'
-                    ? 'Ticket et livraison payés en espèces au livreur · frais de réservation payés maintenant en Mobile Money'
-                    : 'Ticket payé au guichet avant le départ · frais de réservation payés maintenant en Mobile Money',
+              const Text(
+                'Paiement en Mobile Money (Orange ou Moov). Au guichet, votre nom, votre signature et la ville suffisent : on vous remet votre ticket.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: travelMuted, fontSize: 12),
+                style: TextStyle(color: travelMuted, fontSize: 12),
               ),
               const SizedBox(height: 8),
               BigActionButton(
-                label: 'ENVOYER LA RÉSERVATION',
+                label: 'RÉSERVER ET PAYER',
                 icon: Icons.check_rounded,
                 loading: _submitting,
                 onPressed: t.bookable && maxSeats > 0 ? () => _submit(t) : null,
@@ -1877,7 +1877,7 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
                     caption: !t.deliversTickets
                         ? 'Non proposé'
                         : t.canDeliverTicket
-                        ? 'Payé au livreur'
+                        ? 'Livraison payée au livreur'
                         : 'Départ trop proche',
                     selected: _mode == 'delivery',
                     onTap: t.canDeliverTicket
@@ -1928,9 +1928,9 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
                   ),
                 ),
             ],
-            const SectionTitle('Frais de réservation Telima'),
+            const SectionTitle('Paiement en ligne'),
             Text(
-              '${fcfa(travelServiceFee)} par réservation, payés en Mobile Money. La compagnie confirme votre place dès qu’ils sont reçus.',
+              'Vous payez maintenant vos billets plus ${fcfa(travelServiceFee)} de frais de réservation Telima (par réservation), en Mobile Money. La compagnie confirme votre place dès que le paiement est reçu.',
               style: const TextStyle(color: travelMuted, height: 1.35),
             ),
             const SizedBox(height: 8),
@@ -2258,9 +2258,26 @@ class _TravelBookingDetailScreenState
                           ),
                           child: Text(
                             b.feeDue
-                                ? 'Vos places sont bloquées. Payez les frais de réservation (${fcfa(b.serviceFee)}) en Mobile Money : la compagnie confirmera ensuite votre place.'
+                                ? b.prepaid
+                                      ? 'Vos places sont bloquées. Payez ${fcfa(b.onlineAmount)} (billets + frais de réservation) en Mobile Money : la compagnie confirmera ensuite votre place.'
+                                      : 'Vos places sont bloquées. Payez les frais de réservation (${fcfa(b.serviceFee)}) en Mobile Money : la compagnie confirmera ensuite votre place.'
                                 : 'Vos places sont bloquées. La compagnie va confirmer votre réservation : vous recevrez une notification.',
                             style: const TextStyle(height: 1.35),
+                          ),
+                        ),
+                      if (b.refundDue || b.refundDone)
+                        Container(
+                          margin: const EdgeInsets.only(top: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.butter,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            b.refundDone
+                                ? 'Remboursé : ${fcfa(b.refundAmount)} vous ont été renvoyés par Mobile Money.'
+                                : 'Remboursement en cours : ${fcfa(b.refundAmount)} vous seront renvoyés par Mobile Money par l’équipe Telima.',
+                            style: const TextStyle(height: 1.35, fontWeight: FontWeight.w600),
                           ),
                         ),
                       if ((b.companyMessage ?? '').isNotEmpty) ...[
@@ -2326,7 +2343,7 @@ class _TravelBookingDetailScreenState
                               ),
                             ),
                             Text(
-                              fcfa(b.serviceFee),
+                              fcfa(b.onlineAmount),
                               style: const TextStyle(
                                 fontWeight: FontWeight.w800,
                               ),
@@ -2354,7 +2371,9 @@ class _TravelBookingDetailScreenState
                               },
                               icon: const Icon(Icons.phone_android_rounded),
                               label: Text(
-                                'PAYER LES FRAIS (${fcfa(b.serviceFee)})',
+                                b.prepaid
+                                    ? 'PAYER ${fcfa(b.onlineAmount)}'
+                                    : 'PAYER LES FRAIS (${fcfa(b.serviceFee)})',
                               ),
                             ),
                           ),

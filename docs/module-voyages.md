@@ -87,3 +87,13 @@ départs réguliers (tous les jours à 7 h) créés automatiquement, liste des p
   Les assets ne passent pas par un patch Shorebird : il faut une version complète de l'application.
 * **Retrait du ticket** : au guichet, avec le nom, la signature et la ville (le QR code reste une preuve).
 * **Animations** (`lib/widgets/motion.dart`) : entrée en cascade, effet d'appui, car qui roule dans le bandeau d'accueil (`RoadBanner`) ; coupées si l'appareil réduit les animations.
+
+## Paiement du ticket en ligne (14/10/2026, migration `telima_22`)
+* **Un seul paiement Mobile Money par réservation** = billets + 500 F de frais de réservation Telima (Orange Money ou Moov Money, circuit « paiement manuel » : déclaration du client puis validation dans Admin → Paiements à vérifier).
+  La livraison du ticket (si choisie) reste payée au livreur ; les billets ne sont plus encaissés par le livreur.
+* **Au guichet** : le voyageur donne son nom, sa signature et la ville ; on lui remet son ticket (rien à payer sur place ; le QR code reste une preuve).
+* La compagnie ne peut **confirmer** qu'une fois le paiement reçu. Colonne `prepaid` : les réservations antérieures à la migration (`prepaid = false`) gardent l'ancien fonctionnement.
+* **Remboursement** (`refund_status` none/due/done, `refund_amount`) : déclencheur `trg_travel_refund_flag`. Réservation refusée, expirée ou départ annulé → billets + frais ;
+  annulation par le voyageur → billets seulement (frais gardés par Telima). L'équipe est alertée, rembourse en Mobile Money puis touche « Remboursement fait » (action `refund_done`).
+  **Règle à confirmer avec le propriétaire** (frais remboursés ou non en cas d'annulation par le voyageur).
+* **Non géré** : le reversement de l'argent des billets aux compagnies (aucune table ni écran) ; à définir avant les premières ventes réelles.

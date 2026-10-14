@@ -148,6 +148,9 @@ class TravelBooking {
         serviceFee = asInt(j['service_fee']),
         serviceFeeStatus = asStr(j['service_fee_status']) ?? 'none',
         feePaymentId = asStr(j['fee_payment_id']),
+        prepaid = asBool(j['prepaid']),
+        refundStatus = asStr(j['refund_status']) ?? 'none',
+        refundAmount = asInt(j['refund_amount']),
         paymentStatus = asStr(j['payment_status']) ?? 'unpaid',
         seatNumbers = asStr(j['seat_numbers']),
         ticketNumber = asStr(j['ticket_number']),
@@ -185,6 +188,13 @@ class TravelBooking {
   final int serviceFee;
   final String serviceFeeStatus;
   final String? feePaymentId;
+
+  /// Billets payés en ligne avec les frais (réservations récentes) ; sinon ancien fonctionnement : billets payés au guichet.
+  final bool prepaid;
+
+  /// Remboursement : `none`, `due` (à faire par l'équipe Telima), `done`.
+  final String refundStatus;
+  final int refundAmount;
   final String paymentStatus;
   final String? seatNumbers;
   final String? ticketNumber;
@@ -211,7 +221,22 @@ class TravelBooking {
   /// Frais de réservation encore à payer (ou paiement refusé) : le voyageur doit payer pour que la compagnie confirme.
   bool get feeDue => serviceFee > 0 && (serviceFeeStatus == 'unpaid' || serviceFeeStatus == 'failed') && !failed;
   bool get feePaid => serviceFeeStatus == 'paid';
-  String get feeLabel => switch (serviceFeeStatus) {
+
+  /// Montant du paiement Mobile Money : billets + frais de réservation (ou les frais seuls pour une ancienne réservation).
+  int get onlineAmount => prepaid ? ticketsTotal + serviceFee : serviceFee;
+  bool get refundDue => refundStatus == 'due';
+  bool get refundDone => refundStatus == 'done';
+  String get feeLabel => prepaid
+      ? switch (serviceFeeStatus) {
+          'paid' => 'Paiement reçu',
+          'verifying' => 'Paiement en cours de vérification',
+          'failed' => 'Paiement refusé : à refaire',
+          'unpaid' => 'Paiement à faire',
+          _ => '',
+        }
+      : _feeOnlyLabel;
+
+  String get _feeOnlyLabel => switch (serviceFeeStatus) {
         'paid' => 'Frais de réservation payés',
         'verifying' => 'Frais de réservation en cours de vérification',
         'failed' => 'Paiement des frais refusé : à refaire',
@@ -252,7 +277,9 @@ class TravelBooking {
       ];
 
   /// Message de paiement adapté au mode de ticket.
-  String get paymentHint => paid
+  String get paymentHint => prepaid
+      ? '${paid ? 'Billets payés en ligne' : 'Billets à payer en ligne'}${isDelivery ? ' · ${fcfa(deliveryFee)} de livraison à payer au livreur' : ''}'
+      : paid
       ? 'Payé'
       : isDelivery
           ? '${fcfa(total)} à payer en espèces au livreur (billets + livraison)'

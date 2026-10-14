@@ -87,6 +87,23 @@ void main() {
     expect(TravelBooking(_booking()).serviceFee, 0);
     expect(TravelBooking(_booking()).feeDue, isFalse);
     expect(b('verifying').feeLabel, 'Frais de réservation en cours de vérification');
+
+    // Réservation payée en ligne : un seul paiement (billets + frais), remboursement suivi
+    TravelBooking online(String fee, {String refund = 'none'}) => TravelBooking({
+          ..._booking(status: 'pending'),
+          'prepaid': true,
+          'service_fee': 500,
+          'service_fee_status': fee,
+          'refund_status': refund,
+          'refund_amount': 7500,
+        });
+    expect(online('unpaid').onlineAmount, online('unpaid').ticketsTotal + 500);
+    expect(online('unpaid').feeLabel, 'Paiement à faire');
+    expect(online('paid').feePaid, isTrue);
+    expect(online('paid', refund: 'due').refundDue, isTrue);
+    expect(online('paid', refund: 'done').refundDone, isTrue);
+    expect(TravelBooking(_booking()).prepaid, isFalse);
+    expect(TravelBooking(_booking()).onlineAmount, 0);
     expect(travelServiceFee, 500);
   });
 

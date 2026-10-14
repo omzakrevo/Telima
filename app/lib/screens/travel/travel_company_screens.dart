@@ -524,7 +524,8 @@ class _BookingsTabState extends ConsumerState<_BookingsTab> with AutomaticKeepAl
                   Text('${b.trip?.route ?? ''} · ${formatDateTime(b.trip?.departureAt)}', style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text('${b.passengers} place${b.passengers > 1 ? 's' : ''} · ${fcfa(b.ticketsTotal)}'
                       '${b.isDelivery ? ' · ticket à livrer' : ' · e-ticket'}${b.paid ? ' · payé' : ''}'
-                      '${b.serviceFee > 0 ? ' · ${b.feeLabel.toLowerCase()}' : ''}',
+                      '${b.serviceFee > 0 ? ' · ${b.feeLabel.toLowerCase()}' : ''}'
+                      '${b.refundDue ? ' · à rembourser ${fcfa(b.refundAmount)}' : b.refundDone ? ' · remboursé' : ''}',
                       style: const TextStyle(color: AppColors.textMuted)),
                   const SizedBox(height: 4),
                   Row(children: [
@@ -538,7 +539,9 @@ class _BookingsTabState extends ConsumerState<_BookingsTab> with AutomaticKeepAl
                   const SizedBox(height: 8),
                   Wrap(spacing: 8, runSpacing: 6, children: [
                     if (b.status == 'pending' && b.feeDue && (ref.watch(currentUserProvider)?.role.isStaff ?? false))
-                      OutlinedButton(onPressed: () => _act(b, 'fee_received', 'Frais de réservation enregistrés'), child: const Text('Frais reçus')),
+                      OutlinedButton(onPressed: () => _act(b, 'fee_received', 'Paiement enregistré'), child: Text(b.prepaid ? 'Paiement reçu' : 'Frais reçus')),
+                    if (b.refundDue && (ref.watch(currentUserProvider)?.role.isStaff ?? false))
+                      FilledButton(onPressed: () => _act(b, 'refund_done', 'Remboursement enregistré'), child: Text('Remboursement fait (${fcfa(b.refundAmount)})')),
                     if (b.status == 'pending') ...[
                       FilledButton.icon(onPressed: () => _confirm(b), icon: const Icon(Icons.check_rounded), label: const Text('Confirmer')),
                       OutlinedButton(

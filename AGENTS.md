@@ -94,7 +94,8 @@ Frais de réservation 500 F par réservation payés en Mobile Money (activés en
    les modifications de la migration 19 côté Flutter (statut « en attente » des compagnies, test `travel_test.dart`) n'ont pas été exécutées localement.
 5. **Expiration automatique des réservations** : activer l'extension `pg_cron` dans Supabase puis relancer
    `select cron.schedule('telima-expire-travel-bookings', '*/15 * * * *', 'select telima.expire_stale_travel_bookings()');`.
-6. **Circuit de l'argent des tickets livrés** : le livreur encaisse le prix des billets « pour la compagnie » mais rien ne suit
-   le reversement (table, écran, règle). À définir avec le propriétaire avant les premières livraisons de tickets réelles.
+6. **Circuit de l'argent des tickets** : les billets sont maintenant **payés en ligne** à Telima (migration `telima_22`, voir `docs/module-voyages.md`) ;
+   le reversement aux compagnies n'est suivi nulle part (table, écran, règle). À définir avec le propriétaire avant les premières ventes réelles.
+   Remboursement : règle « frais gardés si le voyageur annule lui-même » à confirmer.
 7. Idées listées dans les docs des modules : lecture du QR à la caméra pour le contrôle des tickets, plan des places,
    départs réguliers automatiques, Mobile Money, promotions et guide des tailles pour les boutiques.

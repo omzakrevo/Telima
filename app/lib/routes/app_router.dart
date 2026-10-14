@@ -42,6 +42,8 @@ import '../screens/shop/shop_order_screens.dart';
 import '../screens/shop/shop_owner_screens.dart';
 import '../screens/shop/shop_public_screen.dart';
 import '../screens/shop/shops_home_screen.dart';
+import '../screens/travel/travel_client_screens.dart';
+import '../screens/travel/travel_company_screens.dart';
 import '../screens/vendor/vendor_screens.dart';
 import '../data/models/gas.dart';
 import '../screens/visitor/visitor_screen.dart';
@@ -68,8 +70,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       final auth = ref.read(authControllerProvider);
       final path = state.matchedLocation;
       // Lien partagé par un restaurateur : /r/<lien> (menu, public) et /r/<lien>/order (commande, compte requis)
-      final isShared = path.startsWith('/r/') || path.startsWith('/b/'); // /b/<lien> = boutique
-      final isSharedOrder = isShared && path.endsWith('/order');
+      // /b/<lien> = boutique, /v/<lien> = compagnie de voyage (départs, public) ; /voyage/<id> = réserver (compte requis)
+      final isShared = path.startsWith('/r/') || path.startsWith('/b/') || path.startsWith('/v/') || path.startsWith('/voyage/');
+      final isSharedOrder = isShared && (path.endsWith('/order') || path.startsWith('/voyage/'));
 
       if (auth.loading || (auth.session != null && auth.profile == null)) {
         if (isShared && !isSharedOrder) return null; // le menu se lit sans attendre la connexion
@@ -156,6 +159,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/client/shops/orders/:id', builder: (_, s) => ShopOrderDetailScreen(orderId: s.pathParameters['id']!)),
       GoRoute(path: '/b/:slug', builder: (_, s) => ShopPublicScreen(slug: s.pathParameters['slug']!)),
       GoRoute(path: '/b/:slug/order', builder: (_, s) => ShopCheckoutScreen(slug: s.pathParameters['slug']!)),
+      // Voyages : recherche, réservation, tickets ; lien public d'une compagnie ; espace compagnie
+      GoRoute(path: '/client/voyages', builder: (_, _) => const TravelSearchScreen()),
+      GoRoute(path: '/client/voyages/bookings', builder: (_, _) => const MyTravelBookingsScreen()),
+      GoRoute(path: '/client/voyages/bookings/:id', builder: (_, s) => TravelBookingDetailScreen(bookingId: s.pathParameters['id']!)),
+      GoRoute(path: '/v/:slug', builder: (_, s) => CompanyPublicScreen(slug: s.pathParameters['slug']!)),
+      GoRoute(path: '/voyage/:tripId', builder: (_, s) => TravelBookScreen(tripId: s.pathParameters['tripId']!)),
+      GoRoute(path: '/transport', builder: (_, _) => const CompanyOwnerHomeScreen()),
+      GoRoute(path: '/transport/new', builder: (_, s) => CompanyFormScreen(asAdmin: s.uri.queryParameters['admin'] == '1')),
+      GoRoute(path: '/transport/:id', builder: (_, s) => CompanyManageScreen(companyId: s.pathParameters['id']!)),
+      GoRoute(path: '/transport/:id/edit', builder: (_, s) => CompanyFormScreen(companyId: s.pathParameters['id'])),
       GoRoute(path: '/shop', builder: (_, _) => const ShopOwnerHomeScreen()),
       GoRoute(path: '/shop/new', builder: (_, _) => const ShopFormScreen()),
       GoRoute(path: '/shop/:id', builder: (_, s) => ShopManageScreen(shopId: s.pathParameters['id']!)),

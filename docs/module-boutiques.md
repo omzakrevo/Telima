@@ -39,5 +39,11 @@ Fonctions : `register_shop`, `shop_by_slug` (public), `find_shops` (public), `sh
    natif, donc il faut une **nouvelle version complète** (1.8.0), pas seulement un patch Shorebird.
 3. Site web : `.htaccess` (voir `scripts/deploy_lws.py --htaccess`) pour que `/b/<lien>` ouvre l'application.
 
+## QR code du lien
+* **Commerçant** : onglet *Mon lien* → bouton *QR code à télécharger* (affichage + image PNG 1024 px, fond blanc, prête à imprimer pour la vitrine, le menu, les flyers).
+* **Client** : sur la page publique, icône QR code dans la barre du haut → même feuille, pour garder ou envoyer le code.
+* Web : le PNG est téléchargé directement ; mobile : la feuille de partage du téléphone s'ouvre (enregistrer, WhatsApp…).
+* Le code ne contient que le lien public ; il suit donc le commerce (aucun stockage, aucune migration).
+
 ## Pistes suivantes
-Plusieurs photos par article, QR code du lien, paiement Mobile Money, guide des tailles, promotions et codes de réduction.
+Plusieurs photos par article, paiement Mobile Money, guide des tailles, promotions et codes de réduction.

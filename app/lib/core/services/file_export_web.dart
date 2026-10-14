@@ -16,3 +16,15 @@ Future<void> exportTextFile(String filename, String content, {String mimeType = 
   anchor.remove();
   web.URL.revokeObjectURL(url);
 }
+
+Future<void> exportBytesFile(String filename, List<int> bytes, {String mimeType = 'image/png'}) async {
+  final blob = web.Blob([Uint8List.fromList(bytes).toJS].toJS, web.BlobPropertyBag(type: mimeType));
+  final url = web.URL.createObjectURL(blob);
+  final anchor = web.HTMLAnchorElement()
+    ..href = url
+    ..download = filename;
+  web.document.body?.append(anchor);
+  anchor.click();
+  anchor.remove();
+  web.URL.revokeObjectURL(url);
+}

@@ -29,8 +29,10 @@ class RestaurantPublicScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(restaurant?.name ?? 'Restaurant'),
         actions: [
-          if (restaurant != null)
+          if (restaurant != null) ...[
+            IconButton(tooltip: 'QR code', icon: const Icon(Icons.qr_code_2_rounded), onPressed: () => showRestaurantQr(context, restaurant)),
             IconButton(tooltip: 'Partager', icon: const Icon(Icons.share_rounded), onPressed: () => shareRestaurantLink(context, restaurant)),
+          ],
           if (!signedIn)
             TextButton(
               onPressed: () {

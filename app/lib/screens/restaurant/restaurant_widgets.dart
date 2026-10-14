@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../config/theme.dart';
 import '../../data/models/restaurant.dart';
 import '../../widgets/common.dart';
+import '../../widgets/qr_link_sheet.dart';
 
 /// Photo réseau avec repli (icône) si l'image est absente ou ne charge pas.
 class PhotoBox extends StatelessWidget {
@@ -77,6 +78,9 @@ Future<void> shareRestaurantLink(BuildContext context, Restaurant r) async {
   }
 }
 
+Future<void> showRestaurantQr(BuildContext context, Restaurant r) =>
+    showQrLinkSheet(context, title: r.name, link: restaurantShareLink(r.slug), slug: r.slug);
+
 Future<void> copyRestaurantLink(BuildContext context, Restaurant r) async {
   await Clipboard.setData(ClipboardData(text: restaurantShareLink(r.slug)));
   if (context.mounted) showSuccess(context, 'Lien copié');
@@ -122,6 +126,15 @@ class ShareLinkCard extends StatelessWidget {
             ),
           ),
         ]),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => showRestaurantQr(context, restaurant),
+            icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+            label: const Text('QR code à télécharger'),
+          ),
+        ),
       ]),
     );
   }

@@ -27,6 +27,12 @@ Fonctions : `register_restaurant`, `restaurant_by_slug` (public), `find_restaura
 * Paiement : espèces uniquement (le livreur encaisse les plats pour le restaurant).
 * Les anciennes tables `menu_*` / `food_orders` (module précédent, vides) sont conservées ; les nouveaux objets utilisent des noms distincts.
 
+## QR code du lien
+* **Commerçant** : onglet *Mon lien* → bouton *QR code à télécharger* (affichage + image PNG 1024 px, fond blanc, prête à imprimer pour la vitrine, le menu, les flyers).
+* **Client** : sur la page publique, icône QR code dans la barre du haut → même feuille, pour garder ou envoyer le code.
+* Web : le PNG est téléchargé directement ; mobile : la feuille de partage du téléphone s'ouvre (enregistrer, WhatsApp…).
+* Le code ne contient que le lien public ; il suit donc le commerce (aucun stockage, aucune migration).
+
 ## Pistes suivantes
-QR code imprimable du lien, réorganisation du menu par glisser-déposer, paiement Mobile Money, options de plats (taille, supplément),
+Réorganisation du menu par glisser-déposer, paiement Mobile Money, options de plats (taille, supplément),
 notification sonore côté restaurateur.

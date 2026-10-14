@@ -61,3 +61,16 @@ curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/
 - Brancher Firebase : tableau de bord → **Notifications push** → déposer `google-services.json`
   (package `app.telima.telima`) et la clé du compte de service. Aucune reconstruction de l'application.
 - Bouton « M'envoyer une notification d'essai » pour vérifier.
+
+
+## 4. Tout depuis GitHub, sans ordinateur (workflow « Android (Shorebird) »)
+GitHub > Actions > **Android (Shorebird)** > Run workflow :
+* **release** : nouvelle version complète (version lue dans `app/pubspec.yaml`), signée avec la clé Telima, envoyée à Shorebird, gardée comme fichier téléchargeable du run,
+  puis publiée dans « Mises à jour appli » si la case est cochée (les téléphones proposent la mise à jour à l'ouverture).
+* **patch** : correctif invisible du code Dart pour la version déjà installée.
+
+Secrets à ajouter une seule fois (Settings > Secrets and variables > Actions > Repository secrets) :
+`SHOREBIRD_TOKEN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `TELIMA_KEYSTORE_BASE64` (contenu du fichier `telima-signing.jks` en base64, une seule ligne),
+`TELIMA_STORE_PASSWORD`, `TELIMA_KEY_ALIAS`, `TELIMA_KEY_PASSWORD`, et pour la publication automatique `SUPABASE_SERVICE_ROLE_KEY`.
+Le workflow dit précisément quel secret manque (longueurs seulement, jamais les valeurs) et vérifie le mot de passe de la clé avant de compiler.
+La clé de signature doit être **la même** que celle des versions déjà installées, sinon Android refuse la mise à jour.

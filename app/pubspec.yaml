@@ -92,6 +92,11 @@ flutter:
 
   assets:
     - assets/3d/
+    - assets/voyages/rahimo-transport/
+    - assets/voyages/elitis-express/
+    - assets/voyages/tsr-express/
+    - assets/voyages/rakieta-transport/
+    - assets/voyages/staf/
     - shorebird.yaml
 
   fonts:

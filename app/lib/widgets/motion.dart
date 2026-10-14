@@ -256,3 +256,88 @@ class CountUpText extends StatelessWidget {
         builder: (_, v, _) => Text('${v.round()}', style: style),
       );
 }
+
+/// Bandeau animé : un car roule sur une route, les pointillés défilent, des nuages dérivent (page Voyages).
+class RoadBanner extends StatefulWidget {
+  const RoadBanner({super.key, this.height = 64, this.busColor = Colors.white});
+  final double height;
+  final Color busColor;
+
+  @override
+  State<RoadBanner> createState() => _RoadBannerState();
+}
+
+class _RoadBannerState extends State<RoadBanner> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 7));
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!reduceMotion(context)) _c.repeat();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: widget.height,
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final w = box.maxWidth;
+            return AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final t = _c.value;
+                final busX = -60 + (w + 120) * t;
+                final bounce = (t * 40 % 2 < 1 ? 0.0 : 1.0); // léger tressautement
+                return Stack(clipBehavior: Clip.hardEdge, children: [
+                  Positioned(
+                    left: (w * (1 - t) * 0.9) - 20,
+                    top: 4,
+                    child: Icon(Icons.cloud_rounded, size: 26, color: Colors.white.withValues(alpha: 0.22)),
+                  ),
+                  Positioned(
+                    left: (w * (1 - ((t + 0.5) % 1)) * 0.9) - 20,
+                    top: 16,
+                    child: Icon(Icons.cloud_rounded, size: 18, color: Colors.white.withValues(alpha: 0.16)),
+                  ),
+                  Positioned(left: 0, right: 0, bottom: 0, height: 14, child: CustomPaint(painter: _RoadPainter(t))),
+                  Positioned(left: busX, bottom: 8 + bounce, child: Icon(Icons.directions_bus_rounded, size: 46, color: widget.busColor)),
+                ]);
+              },
+            );
+          },
+        ),
+      );
+}
+
+class _RoadPainter extends CustomPainter {
+  _RoadPainter(this.t);
+  final double t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)),
+      Paint()..color = Colors.black.withValues(alpha: 0.28),
+    );
+    final dash = Paint()
+      ..color = Colors.white.withValues(alpha: 0.75)
+      ..strokeWidth = 2;
+    const period = 26.0;
+    final shift = -(t * period * 12) % period;
+    for (var x = shift; x < size.width; x += period) {
+      canvas.drawLine(Offset(x, size.height / 2), Offset(x + 12, size.height / 2), dash);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RoadPainter old) => old.t != t;
+}

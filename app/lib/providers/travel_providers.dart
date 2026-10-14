@@ -10,10 +10,18 @@ final travelRepositoryProvider =
     Provider((ref) => TravelRepository(ref.watch(supabaseProvider), ref.watch(storageServiceProvider)));
 
 /// Critères de recherche d'un voyage.
-typedef TripQuery = ({String from, String to, DateTime? date});
+typedef TripQuery = ({String from, String to, DateTime? date, String? companyId, int? hourFrom, int? hourTo});
 
-final tripSearchProvider = FutureProvider.autoDispose.family<List<TravelTrip>, TripQuery>(
-    (ref, q) => ref.watch(travelRepositoryProvider).search(from: q.from, to: q.to, date: q.date));
+/// Aucun critère : la page n'affiche pas encore d'horaires.
+const TripQuery emptyTripQuery = (from: '', to: '', date: null, companyId: null, hourFrom: null, hourTo: null);
+
+final tripSearchProvider = FutureProvider.autoDispose.family<List<TravelTrip>, TripQuery>((ref, q) =>
+    ref.watch(travelRepositoryProvider).search(
+        from: q.from, to: q.to, date: q.date, companyId: q.companyId, hourFrom: q.hourFrom, hourTo: q.hourTo));
+
+/// Compagnies visibles par tous (bandeau et filtre de la page Voyages).
+final travelCompaniesProvider =
+    FutureProvider.autoDispose<List<TransportCompany>>((ref) => ref.watch(travelRepositoryProvider).publicCompanies());
 
 final travelCitiesProvider = FutureProvider.autoDispose<List<String>>((ref) => ref.watch(travelRepositoryProvider).cities());
 

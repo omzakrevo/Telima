@@ -58,6 +58,20 @@ final _company = TransportCompany({
   'trips': [_trip('t1'), _trip('t2', h: 54, seats: 0, to: 'Banfora', cls: null)],
 });
 
+TransportCompany _brandCompany(String slug, String name) => TransportCompany({
+      'id': 'c-$slug',
+      'slug': slug,
+      'name': name,
+      'description': 'Cars climatisés, départs tous les jours.',
+      'phone': '+22625000000',
+      'city': 'Ouagadougou',
+      'station_address': 'Gare routière',
+      'lat': 12.36,
+      'lng': -1.52,
+      'status': 'approved',
+      'trips': [_trip('t1'), _trip('t2', h: 54, to: 'Banfora'), _trip('t3', h: 31)].map((t) => {...t, 'company_slug': slug, 'company_name': name}).toList(),
+    });
+
 TravelBooking _booking(String status, {String mode = 'eticket'}) => TravelBooking({
       'id': 'b-$status-$mode',
       'code': 'VOY-2026-000012',
@@ -91,8 +105,9 @@ List _overrides() => [
       savedAddressesProvider.overrideWith((ref, _) async => const []),
       tripSearchProvider.overrideWith((ref, _) async => [TravelTrip(_trip('t1')), TravelTrip(_trip('t2', h: 54, seats: 3, to: 'Banfora', cls: null))]),
       travelCitiesProvider.overrideWith((ref) async => ['Banfora', 'Bobo-Dioulasso', 'Ouagadougou']),
+      travelCompaniesProvider.overrideWith((ref) async => [_company, _brandCompany('rahimo-transport', 'Rahimo Transport'), _brandCompany('tsr-express', 'TSR Express'), _brandCompany('saramaya-transport', 'Saramaya Transport')]),
       travelTripProvider.overrideWith((ref, _) async => TravelTrip(_trip('t1'))),
-      companyBySlugProvider.overrideWith((ref, _) async => _company),
+      companyBySlugProvider.overrideWith((ref, slug) async => slug == 'rahimo-transport' ? _brandCompany(slug, 'Rahimo Transport') : _company),
       companyProvider.overrideWith((ref, _) async => _company),
       companyTripsProvider.overrideWith((ref, _) async => [TravelTrip(_trip('t1')), TravelTrip(_trip('t2', h: 54, seats: 0, to: 'Banfora'))]),
       companyBookingsProvider.overrideWith((ref, _) async => [_booking('pending'), _booking('pending', mode: 'delivery'), _booking('confirmed')]),
@@ -123,11 +138,24 @@ Future<void> _pump(WidgetTester tester, Widget screen, String name,
     overrides: [..._overrides()],
     child: MaterialApp(theme: AppTheme.light(), debugShowCheckedModeBanner: false, home: screen),
   ));
-  await tester.pump(const Duration(milliseconds: 100));
-  await tester.pump(const Duration(milliseconds: 600));
+  // Plusieurs images intermédiaires (les animations d'entrée avancent image par image) et le temps de décoder les images.
+  Future<void> settle() async {
+    await tester.runAsync(() async {
+      final ctx = tester.element(find.byType(MaterialApp));
+      final files = Directory('assets/voyages').listSync(recursive: true).whereType<File>();
+      for (final f in files) {
+        await precacheImage(AssetImage(f.path.replaceAll('\\', '/')), ctx);
+      }
+    });
+    for (var k = 0; k < 14; k++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  await settle();
   if (then != null) {
     await then(tester);
-    await tester.pump(const Duration(milliseconds: 600));
+    await settle();
   }
   expect(tester.takeException(), isNull, reason: name);
   if (_shots.isNotEmpty) {
@@ -160,5 +188,10 @@ void main() {
         }));
   }
   testWidgets('formulaire de départ', (t) => _pump(t, const Scaffold(body: TripFormSheet(companyId: 'c1')), 'a4-formulaire-depart'));
+  testWidgets('recherche : avec critères', (t) => _pump(t, const TravelSearchScreen(), '1b-recherche-criteres', size: const Size(390, 1400), then: (t) async {
+        await t.tap(find.text('Aujourd’hui'));
+        await t.pump(const Duration(milliseconds: 600));
+      }));
+  testWidgets('page compagnie avec photos', (t) => _pump(t, const CompanyPublicScreen(slug: 'rahimo-transport'), '2b-compagnie-photos', size: const Size(390, 1400)));
   testWidgets('recherche : grand écran', (t) => _pump(t, const TravelSearchScreen(), '9-recherche-large', size: const Size(1280, 800)));
 }

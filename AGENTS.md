@@ -74,7 +74,8 @@ Compagnies saisies par l'équipe (admin « Zachari SOME »), approuvées, sans l
 Rahimo Transport, Saramaya Transport (mêmes départs qu'Elitis), Elitis Express, TSR Express, Rakieta Transport (tarifs normaux, affiches de 2023),
 STAF Transport (tarifs de Rakieta). Départs générés pour 10 jours (à renouveler : aucune génération automatique tant que `pg_cron` n'est pas actif).
 Positions des gares approximatives (centre-ville) à préciser dans Admin → Voyages. Horaires « indicatifs » : confirmés par téléphone par l'équipe.
-Frais de réservation 500 F par réservation payés en Mobile Money : migration `telima_20_voyages_frais_reservation` (voir `docs/module-voyages.md`).
+Page Voyages refaite (choix ville/compagnie/heure, bandeau des compagnies, page compagnie avec photos, animations ; migration `telima_21`, voir `docs/module-voyages.md`).
+Frais de réservation 500 F par réservation payés en Mobile Money (activés en production, partie B appliquée) : migration `telima_20_voyages_frais_reservation` (voir `docs/module-voyages.md`).
 
 ## À faire ensuite
 1. ~~Relire et fusionner la PR `codex/reprise`~~ : fait (PR n°3 fusionnée dans `main`, version portée à 1.9.0+2011).

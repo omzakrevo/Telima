@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../config/theme.dart';
 import '../../core/utils/errors.dart';
@@ -10,20 +11,39 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/launchers.dart';
 import '../../data/models/delivery.dart';
 import '../../data/models/travel.dart';
+import '../../data/models/travel_brand.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/data_providers.dart';
 import '../../providers/travel_providers.dart';
 import '../../widgets/common.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/payment_flow.dart';
 import '../../widgets/point_form.dart';
-import '../restaurant/restaurant_widgets.dart' show InfoTag, PhotoBox;
+import '../restaurant/restaurant_widgets.dart' show InfoTag;
 import 'travel_widgets.dart';
 
 // ---------------------------------------------------------------------------
 // Recherche d'un voyage
 // ---------------------------------------------------------------------------
 
-/// Rechercher un départ : ville de départ, d'arrivée, jour.
+/// Tranches horaires de départ (heure du Burkina).
+const _timeBands = <({String label, String range, IconData icon, int from, int to})>[
+  (label: 'Matin', range: '5h–12h', icon: Icons.wb_twilight_rounded, from: 5, to: 12),
+  (label: 'Après-midi', range: '12h–18h', icon: Icons.wb_sunny_rounded, from: 12, to: 18),
+  (label: 'Soir', range: '18h–24h', icon: Icons.nights_stay_rounded, from: 18, to: 24),
+  (label: 'Nuit', range: '0h–5h', icon: Icons.bedtime_rounded, from: 0, to: 5),
+];
+
+/// Lignes proposées en un geste quand aucun critère n'est choisi (si les deux villes existent).
+const _popularRoutes = [
+  ('Ouagadougou', 'Bobo-Dioulasso'),
+  ('Bobo-Dioulasso', 'Ouagadougou'),
+  ('Bobo-Dioulasso', 'Banfora'),
+  ('Ouagadougou', 'Ouahigouya'),
+];
+
+/// Choisir son voyage : ville de départ, ville d'arrivée, compagnie, heure, jour.
+/// Les horaires s'affichent dès le premier choix, sans bouton « Rechercher ».
 class TravelSearchScreen extends ConsumerStatefulWidget {
   const TravelSearchScreen({super.key});
 
@@ -32,25 +52,65 @@ class TravelSearchScreen extends ConsumerStatefulWidget {
 }
 
 class _TravelSearchScreenState extends ConsumerState<TravelSearchScreen> {
-  final _from = TextEditingController();
-  final _to = TextEditingController();
+  String _from = '';
+  String _to = '';
+  TransportCompany? _company;
+  int _band = -1;
   DateTime? _date;
-  TripQuery _query = (from: '', to: '', date: null);
+  int _swapTurns = 0;
 
-  @override
-  void dispose() {
-    _from.dispose();
-    _to.dispose();
-    super.dispose();
+  TripQuery get _query => (
+        from: _from,
+        to: _to,
+        date: _date,
+        companyId: _company?.id,
+        hourFrom: _band < 0 ? null : _timeBands[_band].from,
+        hourTo: _band < 0 ? null : _timeBands[_band].to,
+      );
+
+  bool get _active => _from.isNotEmpty || _to.isNotEmpty || _company != null || _band >= 0 || _date != null;
+
+  void _reset() => setState(() {
+        _from = '';
+        _to = '';
+        _company = null;
+        _band = -1;
+        _date = null;
+      });
+
+  void _swap() => setState(() {
+        final f = _from;
+        _from = _to;
+        _to = f;
+        _swapTurns++;
+      });
+
+  Future<void> _pickCity({required bool isFrom, required List<String> cities}) async {
+    final r = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (_) => _CitySheet(
+        title: isFrom ? 'Ville de départ' : 'Ville d’arrivée',
+        cities: cities,
+        current: isFrom ? _from : _to,
+      ),
+    );
+    if (r == null) return;
+    setState(() => isFrom ? _from = r : _to = r);
   }
 
-  void _search() => setState(() => _query = (from: _from.text.trim(), to: _to.text.trim(), date: _date));
-
-  void _swap() {
-    final f = _from.text;
-    _from.text = _to.text;
-    _to.text = f;
-    _search();
+  Future<void> _pickCompany(List<TransportCompany> companies) async {
+    final r = await showModalBottomSheet<({TransportCompany? company})>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (_) => _CompanySheet(companies: companies, current: _company),
+    );
+    if (r == null) return;
+    setState(() => _company = r.company);
   }
 
   Future<void> _pickDate() async {
@@ -61,22 +121,16 @@ class _TravelSearchScreenState extends ConsumerState<TravelSearchScreen> {
       firstDate: DateTime(now.year, now.month, now.day),
       lastDate: now.add(const Duration(days: 180)),
     );
-    if (d != null) {
-      _date = d;
-      _search();
-    }
+    if (d != null) setState(() => _date = d);
   }
 
   @override
   Widget build(BuildContext context) {
-    final results = ref.watch(tripSearchProvider(_query));
     final cities = ref.watch(travelCitiesProvider).value ?? const <String>[];
+    final companies = ref.watch(travelCompaniesProvider);
     final today = DateTime.now();
     final tomorrow = today.add(const Duration(days: 1));
     bool sameDay(DateTime? a, DateTime b) => a != null && a.year == b.year && a.month == b.month && a.day == b.day;
-
-    Widget cityField(TextEditingController c, String label, IconData icon) =>
-        _CityField(controller: c, label: label, icon: icon, cities: cities, onDone: _search);
 
     return Scaffold(
       appBar: AppBar(
@@ -90,68 +144,163 @@ class _TravelSearchScreenState extends ConsumerState<TravelSearchScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(tripSearchProvider(_query)),
+        onRefresh: () async {
+          ref.invalidate(travelCompaniesProvider);
+          ref.invalidate(tripSearchProvider(_query));
+        },
         child: Constrained(
           maxWidth: 760,
-          child: ListView(padding: const EdgeInsets.all(16), children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: AppColors.line)),
-              child: Column(children: [
-                Row(children: [
-                  Expanded(
-                    child: Column(children: [
-                      cityField(_from, 'Départ', Icons.trip_origin_rounded),
-                      const SizedBox(height: 10),
-                      cityField(_to, 'Arrivée', Icons.place_rounded),
-                    ]),
-                  ),
-                  IconButton(tooltip: 'Inverser', onPressed: _swap, icon: const Icon(Icons.swap_vert_rounded)),
-                ]),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(children: [
-                    ChoiceChip(label: const Text('Toutes les dates'), selected: _date == null, onSelected: (_) { _date = null; _search(); }),
-                    const SizedBox(width: 8),
-                    ChoiceChip(label: const Text('Aujourd’hui'), selected: sameDay(_date, today), onSelected: (_) { _date = today; _search(); }),
-                    const SizedBox(width: 8),
-                    ChoiceChip(label: const Text('Demain'), selected: sameDay(_date, tomorrow), onSelected: (_) { _date = tomorrow; _search(); }),
-                    const SizedBox(width: 8),
-                    ActionChip(
-                      avatar: const Icon(Icons.calendar_month_rounded, size: 18),
-                      label: Text(_date != null && !sameDay(_date, today) && !sameDay(_date, tomorrow) ? formatDate(_date) : 'Autre date'),
-                      onPressed: _pickDate,
+          child: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
+            const FadeSlideIn(child: _TravelHero()),
+            const SizedBox(height: 14),
+            // ----- Choix du trajet -----
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 120),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: AppColors.line),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 18, offset: const Offset(0, 6))],
+                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Row(children: [
+                    Expanded(
+                      child: Column(children: [
+                        _PickTile(
+                          icon: Icons.trip_origin_rounded,
+                          label: 'Départ',
+                          placeholder: 'Choisir la ville de départ',
+                          value: _from,
+                          onTap: () => _pickCity(isFrom: true, cities: cities),
+                          onClear: () => setState(() => _from = ''),
+                        ),
+                        const SizedBox(height: 8),
+                        _PickTile(
+                          icon: Icons.place_rounded,
+                          iconColor: AppColors.accent,
+                          label: 'Arrivée',
+                          placeholder: 'Choisir la ville d’arrivée',
+                          value: _to,
+                          onTap: () => _pickCity(isFrom: false, cities: cities),
+                          onClear: () => setState(() => _to = ''),
+                        ),
+                      ]),
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton.filledTonal(
+                      tooltip: 'Inverser',
+                      onPressed: _swap,
+                      icon: AnimatedRotation(turns: _swapTurns / 2, duration: const Duration(milliseconds: 350), curve: Curves.easeOutBack, child: const Icon(Icons.swap_vert_rounded)),
                     ),
                   ]),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(onPressed: _search, icon: const Icon(Icons.search_rounded), label: const Text('Rechercher')),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 16),
-            results.when(
-              loading: () => const Padding(padding: EdgeInsets.all(30), child: LoadingView()),
-              error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(tripSearchProvider(_query))),
-              data: (list) => list.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.only(top: 30),
-                      child: EmptyState(
-                        icon: Icons.directions_bus_rounded,
-                        message: 'Aucun départ trouvé. Essayez une autre date ou une autre ville.',
-                      ),
-                    )
-                  : Column(children: [
-                      for (final t in list)
+                  const SizedBox(height: 8),
+                  _PickTile(
+                    icon: Icons.directions_bus_rounded,
+                    label: 'Compagnie',
+                    placeholder: 'Toutes les compagnies',
+                    value: _company?.name ?? '',
+                    leading: _company == null ? null : CompanyAvatar(slug: _company!.slug, name: _company!.name, logoPath: _company!.logoPath, size: 28, radius: 8),
+                    onTap: () => _pickCompany(companies.value ?? const []),
+                    onClear: () => setState(() => _company = null),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Heure de départ', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: [
+                      for (final (i, b) in _timeBands.indexed)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: TripCard(trip: t, onTap: t.bookable ? () => context.push('/voyage/${t.id}') : null),
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            avatar: Icon(b.icon, size: 18, color: _band == i ? AppColors.primaryDark : AppColors.textMuted),
+                            label: Text('${b.label} · ${b.range}'),
+                            selected: _band == i,
+                            onSelected: (v) => setState(() => _band = v ? i : -1),
+                          ),
                         ),
                     ]),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Jour', style: TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: [
+                      ChoiceChip(label: const Text('Tous les jours'), selected: _date == null, onSelected: (_) => setState(() => _date = null)),
+                      const SizedBox(width: 8),
+                      ChoiceChip(label: const Text('Aujourd’hui'), selected: sameDay(_date, today), onSelected: (_) => setState(() => _date = today)),
+                      const SizedBox(width: 8),
+                      ChoiceChip(label: const Text('Demain'), selected: sameDay(_date, tomorrow), onSelected: (_) => setState(() => _date = tomorrow)),
+                      const SizedBox(width: 8),
+                      ActionChip(
+                        avatar: const Icon(Icons.calendar_month_rounded, size: 18),
+                        label: Text(_date != null && !sameDay(_date, today) && !sameDay(_date, tomorrow) ? formatDate(_date) : 'Autre date'),
+                        onPressed: _pickDate,
+                      ),
+                    ]),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    alignment: Alignment.topCenter,
+                    child: _active
+                        ? Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(onPressed: _reset, icon: const Icon(Icons.restart_alt_rounded, size: 18), label: const Text('Tout effacer')),
+                          )
+                        : const SizedBox(width: double.infinity),
+                  ),
+                ]),
+              ),
             ),
+            // ----- Bandeau des compagnies -----
+            const SectionTitle('Nos compagnies'),
+            SizedBox(
+              height: 148,
+              child: companies.when(
+                loading: () => ListView(scrollDirection: Axis.horizontal, children: [
+                  for (var i = 0; i < 4; i++)
+                    Container(
+                      width: 136,
+                      margin: const EdgeInsets.only(right: 10),
+                      decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(18)),
+                    ),
+                ]),
+                error: (_, _) => Center(
+                  child: TextButton.icon(
+                    onPressed: () => ref.invalidate(travelCompaniesProvider),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Recharger les compagnies'),
+                  ),
+                ),
+                data: (list) => list.isEmpty
+                    ? const Center(child: Text('Les compagnies arrivent bientôt.', style: TextStyle(color: AppColors.textMuted)))
+                    : ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: list.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 10),
+                        itemBuilder: (_, i) => FadeSlideIn(
+                          delay: Duration(milliseconds: 80 * (i > 6 ? 6 : i)),
+                          offset: 0,
+                          child: _CompanyBannerCard(company: list[i], onTap: () => context.push('/v/${list[i].slug}')),
+                        ),
+                      ),
+              ),
+            ),
+            // ----- Horaires -----
+            const SizedBox(height: 6),
+            if (!_active)
+              _IdleHint(
+                cities: cities,
+                onRoute: (f, t) => setState(() {
+                  _from = f;
+                  _to = t;
+                }),
+              )
+            else
+              _Results(query: _query, onRetry: () => ref.invalidate(tripSearchProvider(_query))),
           ]),
         ),
       ),
@@ -159,65 +308,335 @@ class _TravelSearchScreenState extends ConsumerState<TravelSearchScreen> {
   }
 }
 
-/// Champ de ville avec suggestions (villes des départs programmés).
-class _CityField extends StatefulWidget {
-  const _CityField({required this.controller, required this.label, required this.icon, required this.cities, required this.onDone});
-  final TextEditingController controller;
-  final String label;
-  final IconData icon;
-  final List<String> cities;
-  final VoidCallback onDone;
+/// Bandeau d'accueil : titre et petit car qui roule.
+class _TravelHero extends StatelessWidget {
+  const _TravelHero();
 
   @override
-  State<_CityField> createState() => _CityFieldState();
-}
-
-class _CityFieldState extends State<_CityField> {
-  final _focus = FocusNode();
-
-  @override
-  void dispose() {
-    _focus.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => RawAutocomplete<String>(
-        textEditingController: widget.controller,
-        focusNode: _focus,
-        optionsBuilder: (v) {
-          final q = v.text.trim().toLowerCase();
-          return q.isEmpty ? widget.cities : widget.cities.where((x) => x.toLowerCase().contains(q));
-        },
-        onSelected: (_) => widget.onDone(),
-        fieldViewBuilder: (context, ctrl, focus, onSubmit) => TextField(
-          controller: ctrl,
-          focusNode: focus,
-          textCapitalization: TextCapitalization.words,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => widget.onDone(),
-          decoration: InputDecoration(labelText: widget.label, prefixIcon: Icon(widget.icon)),
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(colors: [AppColors.primaryDark, AppColors.primary], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          borderRadius: BorderRadius.circular(24),
         ),
-        optionsViewBuilder: (context, onSelected, options) => Align(
-          alignment: Alignment.topLeft,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(12),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 240, maxWidth: 320),
-              child: ListView(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                children: [for (final o in options) ListTile(dense: true, title: Text(o), onTap: () => onSelected(o))],
-              ),
-            ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Où allez-vous ?', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+          const SizedBox(height: 4),
+          Text(
+            'Choisissez votre trajet : les horaires s’affichent aussitôt. Retirez votre ticket au guichet.',
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.9), height: 1.35),
           ),
-        ),
+          const SizedBox(height: 10),
+          const RoadBanner(height: 58),
+        ]),
       );
 }
 
+/// Case de choix (ville, compagnie) : touche pour ouvrir la liste, croix pour effacer.
+class _PickTile extends StatelessWidget {
+  const _PickTile({
+    required this.icon,
+    required this.label,
+    required this.placeholder,
+    required this.value,
+    required this.onTap,
+    required this.onClear,
+    this.iconColor = AppColors.primaryDark,
+    this.leading,
+  });
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String placeholder;
+  final String value;
+  final VoidCallback onTap;
+  final VoidCallback onClear;
+  final Widget? leading;
+
+  @override
+  Widget build(BuildContext context) {
+    final has = value.isNotEmpty;
+    return Pressable(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
+        decoration: BoxDecoration(
+          color: has ? AppColors.mint : AppColors.field,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: has ? AppColors.primary.withValues(alpha: 0.5) : Colors.transparent),
+        ),
+        child: Row(children: [
+          leading ?? Icon(icon, color: iconColor, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+              Text(has ? value : placeholder,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontWeight: has ? FontWeight.w800 : FontWeight.w500, color: has ? null : AppColors.textMuted)),
+            ]),
+          ),
+          if (has)
+            IconButton(visualDensity: VisualDensity.compact, tooltip: 'Effacer', onPressed: onClear, icon: const Icon(Icons.close_rounded, size: 20))
+          else
+            const Padding(padding: EdgeInsets.only(right: 6), child: Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Liste des villes avec recherche. Renvoie la ville choisie, ou '' pour « toutes les villes ».
+class _CitySheet extends StatefulWidget {
+  const _CitySheet({required this.title, required this.cities, required this.current});
+  final String title;
+  final List<String> cities;
+  final String current;
+
+  @override
+  State<_CitySheet> createState() => _CitySheetState();
+}
+
+class _CitySheetState extends State<_CitySheet> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final q = _q.trim().toLowerCase();
+    final list = [for (final c in widget.cities) if (q.isEmpty || c.toLowerCase().contains(q)) c];
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              TextField(
+                autofocus: false,
+                onChanged: (v) => setState(() => _q = v),
+                decoration: const InputDecoration(hintText: 'Rechercher une ville', prefixIcon: Icon(Icons.search_rounded)),
+              ),
+            ]),
+          ),
+          Expanded(
+            child: ListView(children: [
+              ListTile(
+                leading: const Icon(Icons.public_rounded),
+                title: const Text('Toutes les villes'),
+                selected: widget.current.isEmpty,
+                onTap: () => Navigator.pop(context, ''),
+              ),
+              if (list.isEmpty)
+                const Padding(padding: EdgeInsets.all(24), child: Center(child: Text('Aucune ville trouvée', style: TextStyle(color: AppColors.textMuted)))),
+              for (final c in list)
+                ListTile(
+                  leading: const Icon(Icons.location_city_rounded),
+                  title: Text(c, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  trailing: c == widget.current ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+                  onTap: () => Navigator.pop(context, c),
+                ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Liste des compagnies. Renvoie la compagnie choisie (ou `company: null` pour « toutes »).
+class _CompanySheet extends StatelessWidget {
+  const _CompanySheet({required this.companies, required this.current});
+  final List<TransportCompany> companies;
+  final TransportCompany? current;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text('Choisir une compagnie', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          ),
+          Expanded(
+            child: ListView(children: [
+              ListTile(
+                leading: const Icon(Icons.apps_rounded),
+                title: const Text('Toutes les compagnies'),
+                selected: current == null,
+                onTap: () => Navigator.pop(context, (company: null)),
+              ),
+              for (final c in companies)
+                ListTile(
+                  leading: CompanyAvatar(slug: c.slug, name: c.name, logoPath: c.logoPath, size: 44, radius: 12),
+                  title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: c.subtitle.isEmpty ? null : Text(c.subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: current?.id == c.id ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
+                  onTap: () => Navigator.pop(context, (company: c)),
+                ),
+            ]),
+          ),
+        ]),
+      );
+}
+
+/// Carte du bandeau « Nos compagnies » : logo, nom ; ouvre la page de la compagnie.
+class _CompanyBannerCard extends StatelessWidget {
+  const _CompanyBannerCard({required this.company, required this.onTap});
+  final TransportCompany company;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = companyBrand(company.slug);
+    return SizedBox(
+      width: 136,
+      child: Pressable(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [brand.color.withValues(alpha: 0.12), Colors.white], begin: Alignment.topCenter, end: Alignment.bottomCenter),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: brand.color.withValues(alpha: 0.3)),
+          ),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            CompanyAvatar(slug: company.slug, name: company.name, logoPath: company.logoPath, size: 56, radius: 16),
+            const SizedBox(height: 8),
+            Text(company.name, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, height: 1.2)),
+            const SizedBox(height: 4),
+            Text('Voir les horaires', style: TextStyle(fontSize: 11, color: brand.color, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// Avant le premier choix : invitation et lignes fréquentes.
+class _IdleHint extends StatelessWidget {
+  const _IdleHint({required this.cities, required this.onRoute});
+  final List<String> cities;
+  final void Function(String from, String to) onRoute;
+
+  @override
+  Widget build(BuildContext context) {
+    final routes = [for (final r in _popularRoutes) if (cities.contains(r.$1) && cities.contains(r.$2)) r];
+    return FadeSlideIn(
+      delay: const Duration(milliseconds: 200),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Column(children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(color: AppColors.mint, shape: BoxShape.circle),
+            child: const Icon(Icons.search_rounded, size: 36, color: AppColors.primaryDark),
+          ),
+          const SizedBox(height: 12),
+          const Text('Vos horaires s’affichent ici', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          const Text(
+            'Choisissez une ville, une compagnie ou une heure de départ.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.textMuted, height: 1.35),
+          ),
+          if (routes.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('Lignes fréquentes', style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, alignment: WrapAlignment.center, children: [
+              for (final r in routes)
+                ActionChip(
+                  avatar: const Icon(Icons.alt_route_rounded, size: 18),
+                  label: Text('${r.$1} → ${r.$2}'),
+                  onPressed: () => onRoute(r.$1, r.$2),
+                ),
+            ]),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Départs correspondant aux critères, regroupés par jour.
+class _Results extends ConsumerWidget {
+  const _Results({required this.query, required this.onRetry});
+  final TripQuery query;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(tripSearchProvider(query));
+    return async.when(
+      loading: () => const Padding(padding: EdgeInsets.all(30), child: LoadingView()),
+      error: (e, _) => ErrorView(error: e, onRetry: onRetry),
+      data: (list) {
+        if (list.isEmpty) {
+          return const FadeSlideIn(
+            child: Padding(
+              padding: EdgeInsets.only(top: 24),
+              child: EmptyState(
+                icon: Icons.directions_bus_rounded,
+                message: 'Aucun départ trouvé avec ces critères. Essayez une autre heure, un autre jour ou une autre compagnie.',
+              ),
+            ),
+          );
+        }
+        final children = <Widget>[
+          FadeSlideIn(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 14, 4, 4),
+              child: Text('${list.length}${list.length >= 150 ? '+' : ''} départ${list.length > 1 ? 's' : ''}',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ];
+        DateTime? lastDay;
+        for (final (i, t) in list.indexed) {
+          final d = t.departureAt.toLocal();
+          final day = DateTime(d.year, d.month, d.day);
+          if (lastDay != day) {
+            lastDay = day;
+            children.add(Padding(
+              padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+              child: Row(children: [
+                const Icon(Icons.event_rounded, size: 18, color: AppColors.primaryDark),
+                const SizedBox(width: 6),
+                Text(_longDay(day), style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryDark)),
+              ]),
+            ));
+          }
+          children.add(Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: FadeSlideIn(
+              key: ValueKey(t.id),
+              delay: Duration(milliseconds: i < 8 ? 60 * i : 0),
+              child: TripCard(trip: t, onTap: t.bookable ? () => context.push('/voyage/${t.id}') : null),
+            ),
+          ));
+        }
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+      },
+    );
+  }
+}
+
+/// « Auj. · vendredi 17 octobre », « Demain · samedi 18 octobre » ou « lundi 19 octobre ».
+String _longDay(DateTime d) {
+  final base = DateFormat('EEEE d MMMM', 'fr_FR').format(d);
+  final label = dayChipLabel(d);
+  return label == 'Auj.' ? 'Aujourd’hui · $base' : (label == 'Demain' ? 'Demain · $base' : base);
+}
+
 // ---------------------------------------------------------------------------
-// Page publique d'une compagnie (lien partagé /v/<slug>)
+// Page d'une compagnie (lien partagé /v/<slug>, ou touche dans le bandeau)
 // ---------------------------------------------------------------------------
 
 class CompanyPublicScreen extends ConsumerWidget {
@@ -229,15 +648,7 @@ class CompanyPublicScreen extends ConsumerWidget {
     final async = ref.watch(companyBySlugProvider(slug));
     final c = async.value;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(c?.name ?? 'Compagnie'),
-        actions: [
-          if (c != null) ...[
-            IconButton(tooltip: 'QR code', icon: const Icon(Icons.qr_code_2_rounded), onPressed: () => showCompanyQr(context, c)),
-            IconButton(tooltip: 'Partager', icon: const Icon(Icons.share_rounded), onPressed: () => shareCompanyLink(context, c)),
-          ],
-        ],
-      ),
+      appBar: c == null ? AppBar(title: const Text('Compagnie')) : null,
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(companyBySlugProvider(slug)),
         child: AsyncBody<TransportCompany?>(
@@ -250,63 +661,305 @@ class CompanyPublicScreen extends ConsumerWidget {
                 EmptyState(icon: Icons.directions_bus_outlined, message: 'Ce lien n’est plus valable.'),
               ]);
             }
-            return Constrained(
-              maxWidth: 760,
-              child: ListView(padding: const EdgeInsets.all(16), children: [
-                Row(children: [
-                  PhotoBox(url: c.logoUrl, size: 64, radius: 16, icon: Icons.directions_bus_rounded),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(c.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-                      if (c.subtitle.isNotEmpty) Text(c.subtitle, style: const TextStyle(color: AppColors.textMuted)),
-                    ]),
-                  ),
-                ]),
-                if ((c.description ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Text(c.description!, style: const TextStyle(height: 1.4)),
-                ],
-                const SizedBox(height: 10),
-                Wrap(spacing: 6, runSpacing: 6, children: [
-                  InfoTag(c.acceptingBookings ? 'Réservations ouvertes' : 'Réservations fermées',
-                      color: c.acceptingBookings ? AppColors.primary : AppColors.danger),
-                  const InfoTag('E-ticket', icon: Icons.qr_code_rounded),
-                  if (c.deliversTickets) const InfoTag('Ticket livré', color: AppColors.info, icon: Icons.delivery_dining_rounded),
-                ]),
-                if ((c.phone ?? '').isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => callPhone(c.phone!),
-                      icon: const Icon(Icons.call_rounded),
-                      label: Text(displayPhone(c.phone)),
-                    ),
-                  ),
-                ],
-                const SectionTitle('Prochains départs'),
-                if (c.trips.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text('Aucun départ programmé pour le moment.', style: TextStyle(color: AppColors.textMuted)),
-                  ),
-                for (final t in c.trips)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: TripCard(
-                      trip: t,
-                      showCompany: false,
-                      onTap: t.bookable ? () => context.push('/voyage/${t.id}') : null,
-                    ),
-                  ),
-              ]),
-            );
+            return _CompanyView(company: c);
           },
         ),
       ),
     );
   }
+}
+
+class _CompanyView extends StatefulWidget {
+  const _CompanyView({required this.company});
+  final TransportCompany company;
+
+  @override
+  State<_CompanyView> createState() => _CompanyViewState();
+}
+
+class _CompanyViewState extends State<_CompanyView> {
+  final _pages = PageController();
+  Timer? _auto;
+  int _page = 0;
+
+  CompanyBrand get _brand => companyBrand(widget.company.slug);
+
+  @override
+  void initState() {
+    super.initState();
+    if (_brand.photos.length > 1) {
+      _auto = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!mounted || !_pages.hasClients) return;
+        final next = (_page + 1) % _brand.photos.length;
+        _pages.animateToPage(next, duration: const Duration(milliseconds: 600), curve: Curves.easeInOutCubic);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _auto?.cancel();
+    _pages.dispose();
+    super.dispose();
+  }
+
+  void _openPhoto(int index) => showDialog<void>(
+        context: context,
+        builder: (_) => _PhotoViewer(photos: _brand.photos, initial: index),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.company;
+    final brand = _brand;
+    final routes = groupRoutes(c.trips);
+    final hasPhotos = brand.hasPhotos;
+    final hasPosition = c.position.latitude != 0 || c.position.longitude != 0;
+    return CustomScrollView(physics: const AlwaysScrollableScrollPhysics(), slivers: [
+      SliverAppBar(
+        pinned: true,
+        expandedHeight: hasPhotos ? 290 : 200,
+        backgroundColor: brand.color,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(tooltip: 'QR code', icon: const Icon(Icons.qr_code_2_rounded), onPressed: () => showCompanyQr(context, c)),
+          IconButton(tooltip: 'Partager', icon: const Icon(Icons.share_rounded), onPressed: () => shareCompanyLink(context, c)),
+        ],
+        flexibleSpace: FlexibleSpaceBar(
+          collapseMode: CollapseMode.parallax,
+          titlePadding: const EdgeInsetsDirectional.only(start: 56, bottom: 14, end: 100),
+          title: Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: Colors.white)),
+          background: Stack(fit: StackFit.expand, children: [
+            if (hasPhotos)
+              PageView.builder(
+                controller: _pages,
+                itemCount: brand.photos.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () => _openPhoto(i),
+                  child: Image.asset(brand.photos[i], fit: BoxFit.cover, errorBuilder: (_, _, _) => ColoredBox(color: brand.color)),
+                ),
+              )
+            else
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [brand.color, Color.lerp(brand.color, Colors.black, 0.35)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                ),
+                child: Align(
+                  alignment: const Alignment(0.7, 0.2),
+                  child: Icon(Icons.directions_bus_rounded, size: 150, color: Colors.white.withValues(alpha: 0.18)),
+                ),
+              ),
+            // Dégradé pour la lisibilité du titre
+            const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [Colors.transparent, Color(0xB3000000)], begin: Alignment.center, end: Alignment.bottomCenter),
+                ),
+              ),
+            ),
+            if (brand.photos.length > 1)
+              Positioned(
+                right: 16,
+                bottom: 18,
+                child: Row(children: [
+                  for (var i = 0; i < brand.photos.length; i++)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: const EdgeInsets.only(left: 5),
+                      width: i == _page ? 18 : 7,
+                      height: 7,
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: i == _page ? 1 : 0.55), borderRadius: BorderRadius.circular(4)),
+                    ),
+                ]),
+              ),
+          ]),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: Constrained(
+          maxWidth: 760,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              // Logo posé à cheval sur l'image, slogan et étiquettes
+              FadeSlideIn(
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 14, offset: const Offset(0, 6))],
+                      ),
+                      child: CompanyAvatar(slug: c.slug, name: c.name, logoPath: c.logoPath, size: 76, radius: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Padding(
+      padding: const EdgeInsets.only(top: 14),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        if ((brand.tagline ?? '').isNotEmpty)
+                          Text('« ${brand.tagline} »', style: TextStyle(fontStyle: FontStyle.italic, color: brand.color, fontWeight: FontWeight.w700)),
+                        if (c.subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(c.subtitle, style: const TextStyle(color: AppColors.textMuted)),
+                        ],
+                      ]),
+                    ),
+                  ),
+                ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(spacing: 6, runSpacing: 6, children: [
+                  InfoTag(c.acceptingBookings ? 'Réservations ouvertes' : 'Réservations fermées',
+                      color: c.acceptingBookings ? AppColors.primary : AppColors.danger,
+                      icon: c.acceptingBookings ? Icons.check_circle_rounded : Icons.cancel_rounded),
+                  const InfoTag('Retrait au guichet', color: AppColors.info, icon: Icons.storefront_rounded),
+                  if (c.deliversTickets) const InfoTag('Ticket livré', color: AppColors.info, icon: Icons.delivery_dining_rounded),
+                ]),
+              ),
+              if ((c.description ?? '').isNotEmpty)
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 100),
+                  child: Padding(padding: const EdgeInsets.only(top: 6), child: Text(c.description!, style: const TextStyle(height: 1.45))),
+                ),
+              const SizedBox(height: 12),
+              FadeSlideIn(
+                delay: const Duration(milliseconds: 150),
+                child: Row(children: [
+                  if ((c.phone ?? '').isNotEmpty)
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        onPressed: () => callPhone(c.phone!),
+                        icon: const Icon(Icons.call_rounded),
+                        label: const Text('Appeler'),
+                      ),
+                    ),
+                  if ((c.phone ?? '').isNotEmpty && hasPosition) const SizedBox(width: 10),
+                  if (hasPosition)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => openNavigation(c.position),
+                        icon: const Icon(Icons.directions_rounded),
+                        label: const Text('La gare'),
+                      ),
+                    ),
+                ]),
+              ),
+              if (brand.photos.length > 1) ...[
+                const SectionTitle('Photos'),
+                SizedBox(
+                  height: 88,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: brand.photos.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 10),
+                    itemBuilder: (_, i) => FadeSlideIn(
+                      delay: Duration(milliseconds: 70 * i),
+                      offset: 0,
+                      child: Pressable(
+                        onTap: () => _openPhoto(i),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(brand.photos[i], width: 128, height: 88, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox(width: 128, height: 88)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              const SectionTitle('Horaires et tarifs'),
+              if (routes.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text('Aucun départ programmé pour le moment.', style: TextStyle(color: AppColors.textMuted)),
+                )
+              else ...[
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
+                  child: Text('Touchez une ligne, choisissez le jour puis l’heure.', style: TextStyle(color: AppColors.textMuted)),
+                ),
+                for (final (i, r) in routes.indexed)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: FadeSlideIn(
+                      delay: Duration(milliseconds: 70 * (i > 8 ? 8 : i)),
+                      child: RouteScheduleCard(
+                        route: r,
+                        color: brand.color,
+                        initiallyOpen: i == 0,
+                        onBook: (t) => context.push('/voyage/${t.id}'),
+                      ),
+                    ),
+                  ),
+              ],
+              const SectionTitle('Votre ticket au guichet'),
+              FadeSlideIn(
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(color: AppColors.butter, borderRadius: BorderRadius.circular(16)),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Icon(Icons.storefront_rounded, color: AppColors.accent),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Réservez ici (frais de réservation Telima : ${fcfa(travelServiceFee)}). Au guichet${(c.stationAddress ?? '').isEmpty ? '' : ' de ${c.stationAddress}'}, '
+                        'présentez-vous avec votre nom, votre signature et la ville : on vous remet votre ticket.',
+                        style: const TextStyle(height: 1.4),
+                      ),
+                    ),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    ]);
+  }
+}
+
+/// Photo en plein écran : glisser pour changer, pincer pour agrandir.
+class _PhotoViewer extends StatefulWidget {
+  const _PhotoViewer({required this.photos, required this.initial});
+  final List<String> photos;
+  final int initial;
+
+  @override
+  State<_PhotoViewer> createState() => _PhotoViewerState();
+}
+
+class _PhotoViewerState extends State<_PhotoViewer> {
+  late final _pages = PageController(initialPage: widget.initial);
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(children: [
+          PageView.builder(
+            controller: _pages,
+            itemCount: widget.photos.length,
+            itemBuilder: (_, i) => InteractiveViewer(
+              maxScale: 4,
+              child: Center(child: Image.asset(widget.photos[i], fit: BoxFit.contain)),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + 8,
+            right: 8,
+            child: IconButton.filledTonal(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+          ),
+        ]),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -515,9 +1168,9 @@ class _TravelBookScreenState extends ConsumerState<TravelBookScreen> {
           Row(children: [
             Expanded(
               child: _ModeCard(
-                icon: Icons.qr_code_2_rounded,
-                title: 'E-ticket',
-                caption: 'QR code · payé à la gare',
+                icon: Icons.storefront_rounded,
+                title: 'Au guichet',
+                caption: 'Nom, signature, ville',
                 selected: _mode == 'eticket',
                 onTap: () => setState(() => _mode = 'eticket'),
               ),

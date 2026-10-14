@@ -16,16 +16,25 @@ class TravelRepository {
 
   // ----- Lecture publique (sans compte) -----
 
-  Future<List<TravelTrip>> search({String? from, String? to, DateTime? date}) async {
+  /// [hourFrom] inclus, [hourTo] exclu : tranche horaire de départ (heure du Burkina).
+  Future<List<TravelTrip>> search({String? from, String? to, DateTime? date, String? companyId, int? hourFrom, int? hourTo}) async {
     String? clean(String? s) => (s ?? '').trim().isEmpty ? null : s!.trim();
     final rows = await _client.rpc('search_travel_trips', params: {
       'p_from': clean(from),
       'p_to': clean(to),
       'p_date': date == null ? null : _day(date),
-      'p_limit': 80,
+      'p_limit': 150,
+      'p_company': companyId,
+      'p_hour_from': hourFrom,
+      'p_hour_to': hourTo,
     });
     return [for (final r in (rows as List)) TravelTrip(Map<String, dynamic>.from(r as Map))];
   }
+
+  /// Compagnies approuvées (sans leurs départs).
+  Future<List<TransportCompany>> publicCompanies() async => [
+        for (final r in (await _client.rpc('travel_companies') as List)) TransportCompany(Map<String, dynamic>.from(r as Map))
+      ];
 
   Future<List<String>> cities() async => [for (final c in (await _client.rpc('travel_cities') as List)) '$c'];
 

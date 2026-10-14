@@ -76,3 +76,14 @@ a été vérifié sur la base de production dans une transaction annulée (aucun
 ## Pistes suivantes
 Lecture du QR code à la caméra dans l'onglet Contrôle, plan des places à choisir, paiement Mobile Money (Orange Money, Moov),
 départs réguliers (tous les jours à 7 h) créés automatiquement, liste des passagers d'un départ à imprimer.
+
+## Page Voyages : choix du trajet, compagnies, animations (14/10/2026)
+* **Choix du trajet** : ville de départ, ville d'arrivée, compagnie, tranche horaire (matin 5h–12h, après-midi 12h–18h, soir 18h–24h, nuit 0h–5h) et jour.
+  Les horaires s'affichent dès le premier choix (pas de bouton « Rechercher »), regroupés par jour. Serveur : `search_travel_trips(p_from, p_to, p_date, p_limit, p_company, p_hour_from, p_hour_to)`
+  (migration `telima_21` ; l'ancienne version à 4 paramètres est renommée `search_travel_trips_v1`).
+* **Bandeau « Nos compagnies »** (`travel_companies()`), puis page de la compagnie (`/v/<lien>`) : photos qui défilent, logo, lignes avec jour puis heure, retrait du ticket au guichet.
+* **Visuels** : logos et photos des compagnies sont **embarqués dans l'application** (`app/assets/voyages/<lien>/`, déclarés dans `lib/data/models/travel_brand.dart`),
+  tirés des affiches fournies. Saramaya n'a pas de visuel (dégradé avec initiales). Ajouter une compagnie : déposer ses images, déclarer le dossier dans `pubspec.yaml` et dans `travel_brand.dart`.
+  Les assets ne passent pas par un patch Shorebird : il faut une version complète de l'application.
+* **Retrait du ticket** : au guichet, avec le nom, la signature et la ville (le QR code reste une preuve).
+* **Animations** (`lib/widgets/motion.dart`) : entrée en cascade, effet d'appui, car qui roule dans le bandeau d'accueil (`RoadBanner`) ; coupées si l'appareil réduit les animations.

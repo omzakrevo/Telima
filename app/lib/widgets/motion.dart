@@ -341,3 +341,113 @@ class _RoadPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RoadPainter old) => old.t != t;
 }
+
+/// Fond dégradé teinté avec de grands cercles lumineux qui dérivent lentement (pages Voyages).
+class GradientBackdrop extends StatefulWidget {
+  const GradientBackdrop({super.key, required this.child, this.tint = AppColors.primary});
+  final Widget child;
+  final Color tint;
+
+  @override
+  State<GradientBackdrop> createState() => _GradientBackdropState();
+}
+
+class _GradientBackdropState extends State<GradientBackdrop> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 14));
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!reduceMotion(context)) _c.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.tint;
+    return Stack(children: [
+      Positioned.fill(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color.lerp(Colors.white, t, 0.20)!, Color.lerp(AppColors.surface, t, 0.07)!, AppColors.surface],
+              stops: const [0, 0.45, 1],
+            ),
+          ),
+        ),
+      ),
+      Positioned.fill(
+        child: IgnorePointer(
+          child: AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final v = Curves.easeInOut.transform(_c.value);
+              Widget blob(Alignment a, double size, double alpha) => Align(
+                    alignment: a,
+                    child: Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(colors: [t.withValues(alpha: alpha), t.withValues(alpha: 0)]),
+                      ),
+                    ),
+                  );
+              return Stack(children: [
+                blob(Alignment.lerp(const Alignment(-1.2, -0.9), const Alignment(-0.4, -0.6), v)!, 360, 0.30),
+                blob(Alignment.lerp(const Alignment(1.3, -0.2), const Alignment(0.7, 0.1), v)!, 300, 0.22),
+                blob(Alignment.lerp(const Alignment(-0.9, 1.1), const Alignment(-0.2, 0.8), v)!, 340, 0.18),
+              ]);
+            },
+          ),
+        ),
+      ),
+      widget.child,
+    ]);
+  }
+}
+
+/// Zoom très lent sur une photo (effet « Ken Burns »).
+class KenBurns extends StatefulWidget {
+  const KenBurns({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<KenBurns> createState() => _KenBurnsState();
+}
+
+class _KenBurnsState extends State<KenBurns> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 9));
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!reduceMotion(context)) _c.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _c,
+        child: widget.child,
+        builder: (_, child) => Transform.scale(scale: 1 + 0.09 * Curves.easeInOut.transform(_c.value), child: child),
+      );
+}

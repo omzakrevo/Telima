@@ -36,7 +36,10 @@ String dayChipLabel(DateTime d) {
 /// Prix compact : « 7 500 F ».
 String shortFcfa(int price) => fcfa(price).replaceAll('FCFA', 'F');
 
-/// Logo d'une compagnie : visuel embarqué, sinon logo envoyé par la compagnie, sinon initiales sur sa couleur.
+/// Texte secondaire des écrans Voyages : plus foncé que le gris habituel pour rester lisible.
+const travelMuted = Color(0xFF4E5A54);
+
+/// Monogramme d'une compagnie (petites tailles) : initiales blanches sur un dégradé à sa couleur, ou logo envoyé par la compagnie.
 class CompanyAvatar extends StatelessWidget {
   const CompanyAvatar({super.key, required this.slug, required this.name, this.logoPath, this.size = 48, this.radius = 14});
   final String? slug;
@@ -53,30 +56,95 @@ class CompanyAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [brand.color, Color.lerp(brand.color, Colors.black, 0.25)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        gradient: LinearGradient(colors: [brand.color, Color.lerp(brand.color, Colors.black, 0.28)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
       ),
       child: Text(companyInitials(name), style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: size * 0.36)),
     );
-    final Widget inner;
-    if (brand.logo != null) {
-      inner = Container(
+    final url = travelPhotoUrl(logoPath);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
         width: size,
         height: size,
-        color: Colors.white,
-        padding: EdgeInsets.all(size * 0.08),
-        child: Image.asset(brand.logo!, fit: BoxFit.contain, errorBuilder: (_, _, _) => initials),
-      );
-    } else if (travelPhotoUrl(logoPath) != null) {
-      inner = Image.network(travelPhotoUrl(logoPath)!, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => initials);
-    } else {
-      inner = initials;
-    }
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: AppColors.line),
+        child: url == null ? initials : Image.network(url, width: size, height: size, fit: BoxFit.cover, errorBuilder: (_, _, _) => initials),
       ),
-      child: ClipRRect(borderRadius: BorderRadius.circular(radius), child: SizedBox(width: size, height: size, child: inner)),
+    );
+  }
+}
+
+/// Logo d'une compagnie dans un cadre qui épouse sa forme et son fond : pas d'espace vide autour.
+/// Sans logo embarqué : monogramme.
+class CompanyLogoPlate extends StatelessWidget {
+  const CompanyLogoPlate({super.key, required this.slug, required this.name, this.logoPath, this.height = 56, this.maxWidth = 160, this.radius = 14});
+  final String? slug;
+  final String? name;
+  final String? logoPath;
+  final double height;
+  final double maxWidth;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final brand = companyBrand(slug);
+    if (brand.logo == null) return CompanyAvatar(slug: slug, name: name, logoPath: logoPath, size: height, radius: radius);
+    final width = (height * brand.logoAspect).clamp(height, maxWidth);
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: brand.logoBg,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: brand.color.withValues(alpha: 0.35), width: 1.5),
+        boxShadow: [BoxShadow(color: brand.color.withValues(alpha: 0.22), blurRadius: 12, offset: const Offset(0, 5))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius - 1.5),
+        child: Image.asset(
+          brand.logo!,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => CompanyAvatar(slug: slug, name: name, size: height, radius: radius),
+        ),
+      ),
+    );
+  }
+}
+
+/// Puce de choix (heure, jour, ligne) : pleine et en dégradé quand elle est choisie, blanche et bordée sinon.
+class TravelChip extends StatelessWidget {
+  const TravelChip({super.key, required this.label, required this.selected, required this.onTap, this.color = AppColors.primary, this.icon});
+  final String label;
+  final bool selected;
+  final VoidCallback? onTap;
+  final Color color;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = selected ? Colors.white : AppColors.ink;
+    return Pressable(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: selected ? LinearGradient(colors: [color, Color.lerp(color, Colors.black, 0.22)!], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
+          color: selected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: selected ? Colors.transparent : color.withValues(alpha: 0.35)),
+          boxShadow: selected ? [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 10, offset: const Offset(0, 4))] : null,
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          if (selected) ...[
+            const Icon(Icons.check_rounded, size: 17, color: Colors.white),
+            const SizedBox(width: 5),
+          ] else if (icon != null) ...[
+            Icon(icon, size: 17, color: color),
+            const SizedBox(width: 6),
+          ],
+          Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: fg)),
+        ]),
+      ),
     );
   }
 }
@@ -130,7 +198,7 @@ class _TripTimeline extends StatelessWidget {
             if (t.durationMinutes != null)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
-                child: Text(travelDuration(t.durationMinutes!), style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                child: Text(travelDuration(t.durationMinutes!), style: const TextStyle(fontSize: 12, color: travelMuted, fontWeight: FontWeight.w600)),
               ),
           ]),
         ),
@@ -199,11 +267,11 @@ class TripCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   Row(children: [
                     if (showCompany) ...[
-                      const Icon(Icons.event_rounded, size: 15, color: AppColors.textMuted),
+                      const Icon(Icons.event_rounded, size: 15, color: travelMuted),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(travelDay(t.departureAt),
-                            maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                            maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: travelMuted, fontWeight: FontWeight.w600)),
                       ),
                     ] else
                       const Spacer(),
@@ -330,7 +398,7 @@ class _RouteScheduleCardState extends State<RouteScheduleCard> {
                     [if (r.duration != null) travelDuration(r.duration!), if (!_open && preview.isNotEmpty) preview].join('  ·  '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: const TextStyle(color: travelMuted, fontSize: 13),
                   ),
                 ]),
               ),
@@ -339,7 +407,7 @@ class _RouteScheduleCardState extends State<RouteScheduleCard> {
               AnimatedRotation(
                 turns: _open ? 0.5 : 0,
                 duration: const Duration(milliseconds: 250),
-                child: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted),
+                child: const Icon(Icons.keyboard_arrow_down_rounded, color: travelMuted),
               ),
             ]),
           ),
@@ -361,13 +429,11 @@ class _RouteScheduleCardState extends State<RouteScheduleCard> {
                         for (final (i, d) in days.indexed)
                           Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(dayChipLabel(d)),
+                            child: TravelChip(
+                              label: dayChipLabel(d),
                               selected: d == day,
-                              selectedColor: widget.color.withValues(alpha: 0.15),
-                              checkmarkColor: widget.color,
-                              labelStyle: TextStyle(fontWeight: FontWeight.w700, color: d == day ? widget.color : null),
-                              onSelected: (_) => setState(() => _day = i),
+                              color: widget.color,
+                              onTap: () => setState(() => _day = i),
                             ),
                           ),
                       ]),
@@ -416,14 +482,14 @@ class _TimeChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.08),
+            gradient: LinearGradient(colors: [Colors.white, color.withValues(alpha: 0.12)], begin: Alignment.topLeft, end: Alignment.bottomRight),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: color.withValues(alpha: 0.35)),
+            border: Border.all(color: color.withValues(alpha: 0.45)),
           ),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(formatTime(t.departureAt), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17, color: color)),
+            Text(formatTime(t.departureAt), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color.lerp(color, Colors.black, 0.25))),
             const SizedBox(height: 1),
-            Text(sub, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+            Text(sub, style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: travelMuted)),
           ]),
         ),
       ),
@@ -500,7 +566,7 @@ class _ETicketCardState extends State<ETicketCard> {
           semanticsLabel: 'QR code du ticket ${b.code}',
         ),
         const SizedBox(height: 6),
-        const Text('Au guichet : votre nom, votre signature et la ville suffisent', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
+        const Text('Au guichet : votre nom, votre signature et la ville suffisent', textAlign: TextAlign.center, style: TextStyle(color: travelMuted)),
         const Divider(height: 22),
         if (t != null) ...[
           _Line('Trajet', t.route),
@@ -537,7 +603,7 @@ class _Line extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(width: 104, child: Text(label, style: const TextStyle(color: AppColors.textMuted))),
+          SizedBox(width: 104, child: Text(label, style: const TextStyle(color: travelMuted))),
           Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
         ]),
       );
@@ -583,7 +649,7 @@ class CompanyLinkCard extends StatelessWidget {
           SelectableText(companyShareLink(company.slug), style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           const Text('Partagez-le ou affichez le QR code au guichet : vos voyageurs voient les départs et réservent directement.',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13, height: 1.3)),
+              style: TextStyle(color: travelMuted, fontSize: 13, height: 1.3)),
           const SizedBox(height: 10),
           Row(children: [
             Expanded(

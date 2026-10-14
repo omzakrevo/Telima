@@ -22,8 +22,12 @@ on:
       mode:
         description: "release = nouvelle version complète ; patch = correctif invisible"
         type: choice
-        options: [release, patch]
+        options: [release, patch, publish]
         default: release
+      from_run:
+        description: "Mode publish : numéro du run (adresse /actions/runs/NUMERO) qui a produit l'APK"
+        type: string
+        default: ""
       publish_in_app:
         description: "Publier aussi dans « Mises à jour appli » (release uniquement ; clé service_role requise)"
         type: boolean
@@ -39,6 +43,7 @@ on:
 
 jobs:
   android:
+    if: inputs.mode != 'publish'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -151,27 +156,46 @@ jobs:
           VERSION_N: ${{ steps.ver.outputs.n }}
           NOTES: ${{ inputs.notes }}
           MANDATORY: ${{ inputs.mandatory }}
+          APK: app/build/app/outputs/flutter-apk/app-release.apk
+        run: python3 scripts/publish_release.py
+
+  publish:
+    if: inputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer l'APK du run précédent
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.from_run }}
+          github-token: ${{ github.token }}
+          pattern: telima-*-apk
+          path: apk
+          merge-multiple: true
+
+      - name: Version de l'application
+        id: ver
         run: |
           python3 - <<'EOF'
-          import json, os, urllib.request
-          from urllib.parse import urlparse
-          u = urlparse(os.environ["SUPABASE_URL"].strip())
-          base = f"{u.scheme}://{u.netloc}"
-          key = os.environ["SUPABASE_SERVICE_ROLE_KEY"].strip()
-          n = int(os.environ["VERSION_N"])
-          path = f"android/{n}/app-release.apk"
-          apk = open("app/build/app/outputs/flutter-apk/app-release.apk", "rb").read()
-          print(f"APK : {len(apk) // 1024} Ko")
-          req = urllib.request.Request(f"{base}/storage/v1/object/telima-releases/{path}", data=apk, method="POST", headers={
-              "apikey": key, "Authorization": f"Bearer {key}",
-              "Content-Type": "application/vnd.android.package-archive", "x-upsert": "true"})
-          urllib.request.urlopen(req, timeout=600).read()
-          row = {"platform": "android", "version_name": os.environ["VERSION_NAME"], "version_code": n,
-                 "apk_universal_path": path, "notes": os.environ["NOTES"] or None,
-                 "mandatory": os.environ["MANDATORY"] == "true", "is_published": True}
-          req = urllib.request.Request(f"{base}/rest/v1/app_releases?on_conflict=platform,version_code", data=json.dumps(row).encode(),
-              method="POST", headers={"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json",
-              "Content-Profile": "telima", "Prefer": "resolution=merge-duplicates,return=minimal"})
-          urllib.request.urlopen(req, timeout=60).read()
-          print(f"Version {os.environ['VERSION_NAME']} (numéro {n}) publiée dans « Mises à jour appli ».")
+          import os, re
+          m = re.search(r"^version:\s*(\d+\.\d+\.\d+)\+(\d+)", open("app/pubspec.yaml").read(), re.M)
+          name, build = m.group(1), int(m.group(2))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"name={name}\nn={build - 2000}\n")
           EOF
+
+      - name: Publier dans « Mises à jour appli »
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          VERSION_N: ${{ steps.ver.outputs.n }}
+          NOTES: ${{ inputs.notes }}
+          MANDATORY: ${{ inputs.mandatory }}
+          APK: apk/app-release.apk
+        run: python3 scripts/publish_release.py

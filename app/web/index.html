@@ -146,6 +146,7 @@
           fail("Une erreur a empêché le démarrage (" + (e.message || "inconnue") + "). Rechargez la page.");
         }
       });
+      var swReady = Promise.resolve();
       // Retire l'ancien cache hors ligne de Flutter, puis enregistre le petit service worker
       // qui rend la version web installable comme une application.
       if ("serviceWorker" in navigator) {
@@ -156,6 +157,14 @@
           });
         });
         navigator.serviceWorker.register("sw.js").catch(function () {});
+        // Première visite : on attend (4 s au maximum) que le service worker prenne la main, car c'est lui qui
+        // décompresse le fichier principal (voir sw.js). Ensuite, il est déjà en place dès l'ouverture.
+        if (typeof DecompressionStream === "function" && !navigator.serviceWorker.controller) {
+          swReady = Promise.race([
+            new Promise(function (ok) { navigator.serviceWorker.addEventListener("controllerchange", function () { ok(); }, { once: true }); }),
+            new Promise(function (ok) { setTimeout(ok, 4000); })
+          ]);
+        }
       }
 
       // Téléchargement préalable (avec reprise automatique) du fichier principal et du moteur de dessin CanvasKit,
@@ -211,7 +220,7 @@
           var base = "https://www.gstatic.com/flutter-canvaskit/" + m[1] + "/" + (chromium ? "chromium/" : "");
           [base + "canvaskit.js", base + "canvaskit.wasm"].forEach(function (u) { files.push(u); optional[u] = true; });
         }
-      }).catch(function () {}).then(function () {
+      }).catch(function () {}).then(function () { return swReady; }).then(function () {
         // Le fichier principal est indispensable ; CanvasKit est facultatif ici (Flutter le chargera lui-même s'il manque).
         return Promise.all(files.map(function (f) {
           var p = get(f, 0);

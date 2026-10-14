@@ -50,13 +50,17 @@ HTACCESS = """# Telima : réécriture pour l'application web, MIME, compression 
   AddType font/otf .otf
 </IfModule>
 # Compression : main.dart.js passe de 5,7 Mo à environ 1,6 Mo (la différence entre 10 secondes et 1 minute sur un téléphone)
+<IfModule mod_setenvif.c>
+  # Au cas où l'hébergeur exclurait le JavaScript de la compression
+  SetEnvIfNoCase Request_URI "\\.(js|mjs|json|ttf|otf|wasm)$" !no-gzip !dont-vary
+</IfModule>
 <IfModule mod_deflate.c>
   AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/x-javascript application/json application/wasm image/svg+xml font/ttf font/otf application/x-font-ttf application/octet-stream text/plain
 </IfModule>
 <IfModule mod_headers.c>
   # Le fichier principal et les pages se revalident à chaque visite (réponse « inchangé » en une fraction de seconde
   # grâce à l'ETag) au lieu de se retélécharger en entier : plus de « no-store ».
-  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|main\\.dart\\.mjs|sw\\.js)$">
+  <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|main\\.dart\\.gzbin|main\\.dart\\.mjs|sw\\.js)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
   # Polices, images et icônes : gardées 30 jours
@@ -74,7 +78,16 @@ HTACCESS = """# Telima : réécriture pour l'application web, MIME, compression 
 """
 
 
+# Copie compressée du fichier principal (le serveur LWS ne compresse pas le JavaScript) : le petit service worker
+# du site (sw.js) la décompresse dans le navigateur. 5,7 Mo -> environ 1,6 Mo à télécharger.
+GZ_NAME = "main.dart.gzbin"
+ALWAYS_SEND = {"main.dart.js", GZ_NAME, "flutter_bootstrap.js", "index.html", "sw.js", "version.json"}
+
+
 def content(rel: str, supabase: dict) -> bytes:
+    if rel == GZ_NAME:
+        import gzip
+        return gzip.compress((WEB / "main.dart.js").read_bytes(), 9, mtime=0)
     data = (WEB / rel).read_bytes()
     if rel in TEMPLATED:
         text = data.decode("utf-8")
@@ -109,6 +122,7 @@ def main() -> None:
         for p in WEB.rglob("*")
         if p.is_file() and p.name != ".last_build_id"
     )
+    files.append(GZ_NAME)
 
     transport = paramiko.Transport((host, port))
     if key:
@@ -134,7 +148,7 @@ def main() -> None:
         data = content(rel, supabase)
         remote = posixpath.join(base, rel)
         try:
-            same = sftp.stat(remote).st_size == len(data)
+            same = rel not in ALWAYS_SEND and sftp.stat(remote).st_size == len(data)
         except IOError:
             same = False
         if not same:

@@ -19,14 +19,16 @@ jobs:
         env:
           SITE: ${{ inputs.site }}
         run: |
-          for f in "" main.dart.js flutter_bootstrap.js assets/FontManifest.json assets/assets/fonts/PlusJakartaSans-700.ttf; do
-            for enc in "br, gzip" "gzip" "identity"; do
+          for f in "" main.dart.gzbin sw.js flutter_bootstrap.js assets/assets/fonts/PlusJakartaSans-700.ttf; do
+            for enc in "gzip" "identity"; do
               echo "=== /$f  (Accept-Encoding: $enc)"
               curl -s -o /dev/null -H "Accept-Encoding: $enc" -D /tmp/h.txt \
                 -w "taille reçue : %{size_download} octets · temps : %{time_total}s · HTTP %{http_code}\n" "$SITE/$f"
               grep -i -E "^(content-encoding|cache-control|etag|last-modified|content-type|server|content-length)" /tmp/h.txt || true
             done
           done
+          echo "=== main.dart.js non compressé (une seule mesure, pour comparaison)"
+          curl -s -o /dev/null -H "Accept-Encoding: gzip" -w "taille reçue : %{size_download} octets · temps : %{time_total}s\n" "$SITE/main.dart.js"
           echo "=== Fichier inexistant (doit renvoyer l'application)"
           curl -s -o /dev/null -w "HTTP %{http_code}\n" "$SITE/r/test"
           echo "=== .htaccess visible ?"

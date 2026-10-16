@@ -63,8 +63,13 @@ HTACCESS = """# Telima : réécriture pour l'application web, MIME, compression 
   <FilesMatch "(index\\.html|version\\.json|flutter_bootstrap\\.js|flutter\\.js|main\\.dart\\.js|main\\.dart\\.gzbin|main\\.dart\\.mjs|sw\\.js)$">
     Header set Cache-Control "no-cache"
   </FilesMatch>
-  # Polices, images et icônes : gardées 30 jours
-  <FilesMatch "\\.(wasm|otf|ttf|png|webp|ico|jpg|jpeg|svg)$">
+  # Polices d'icônes (MaterialIcons, réduite à chaque compilation) et manifestes : toujours revalidés, sinon une
+  # ancienne copie en cache n'a pas les nouvelles icônes (cases vides)
+  <FilesMatch "\\.(otf|ttf|json)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  # Moteur, images : gardés 30 jours
+  <FilesMatch "\\.(wasm|png|webp|ico|jpg|jpeg|svg)$">
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 </IfModule>
@@ -148,7 +153,8 @@ def main() -> None:
         data = content(rel, supabase)
         remote = posixpath.join(base, rel)
         try:
-            same = rel not in ALWAYS_SEND and sftp.stat(remote).st_size == len(data)
+            # une taille identique ne prouve pas que le contenu l'est (police d'icônes, manifestes) : on renvoie
+            same = rel not in ALWAYS_SEND and not rel.endswith((".otf", ".ttf", ".json", ".js")) and sftp.stat(remote).st_size == len(data)
         except IOError:
             same = False
         if not same:

@@ -35,6 +35,7 @@ import '../screens/restaurant/restaurant_form_screen.dart';
 import '../screens/restaurant/restaurant_order_screens.dart';
 import '../screens/restaurant/restaurant_owner_screens.dart';
 import '../screens/restaurant/restaurant_public_screen.dart';
+import '../screens/client/global_search_screen.dart';
 import '../screens/restaurant/restaurants_home_screen.dart';
 import '../providers/restaurant_providers.dart';
 import '../screens/shop/shop_form_screen.dart';
@@ -139,6 +140,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/client/gas/order/:id', builder: (_, s) => GasOrderScreen(placeId: s.pathParameters['id']!, initial: s.extra as Place?)),
 
       // Restaurants : liste, commandes
+      GoRoute(path: '/client/search', builder: (_, s) => GlobalSearchScreen(initialQuery: s.uri.queryParameters['q'] ?? '')),
       GoRoute(path: '/client/restaurants', builder: (_, _) => const RestaurantsHomeScreen()),
       GoRoute(path: '/client/restaurants/orders', builder: (_, _) => const RestaurantOrdersScreen()),
       GoRoute(path: '/client/restaurants/orders/:id', builder: (_, s) => RestaurantOrderDetailScreen(orderId: s.pathParameters['id']!)),

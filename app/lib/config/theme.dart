@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// Palette Telima — style « vert sauge » : fond blanc légèrement mentholé, cartes teintées vert pâle,
-/// boutons verts aux coins arrondis, barre de navigation flottante sombre.
+/// Palette Telima : fond blanc cassé, surfaces gris doux, orange pour les actions, anthracite pour les titres,
+/// crème pour les bannières. Même charte que l'accueil client.
 class AppColors {
-  static const primary = Color(0xFF3D8B5F); // vert Telima
-  static const primaryDark = Color(0xFF2B6B48);
-  static const ink = Color(0xFF1C2420); // titres, barre de navigation
+  static const primary = Color(0xFFF08A3C); // orange Telima (action principale)
+  static const primaryDark = Color(0xFFB95E17); // orange foncé (texte sur fond clair)
+  static const ink = Color(0xFF181A19); // titres, barre de navigation
   static const accent = Color(0xFFF08A3C); // orange (point d'arrivée, étoiles)
   static const danger = Color(0xFFDC4B4B);
   static const info = Color(0xFF3F6FD8);
-  static const surface = Color(0xFFF6FAF7); // fond des écrans
-  static const field = Color(0xFFEDF4EF); // lignes de liste, puces, cartes teintées
-  static const line = Color(0xFFE1EBE4); // bordures discrètes
-  static const textMuted = Color(0xFF7A8580);
-  static const backdrop = Color(0xFFDDEDE3); // fond vert pâle (en-têtes, accueil)
+  static const surface = Color(0xFFFAFAF8); // fond des écrans
+  static const field = Color(0xFFF2F2EF); // lignes de liste, puces, cartes teintées
+  static const line = Color(0xFFE9E9E5); // bordures discrètes
+  static const textMuted = Color(0xFF8A8F8C);
+  static const backdrop = Color(0xFFFFF3E6); // fond vert pâle (en-têtes, accueil)
 
   // Tons doux pour les illustrations de services
-  static const mint = Color(0xFFE0F0E6);
+  static const mint = Color(0xFFFFF3E6);
   static const peach = Color(0xFFFFEBDD);
   static const lilac = Color(0xFFECE8FA);
   static const sky = Color(0xFFE3EEFC);
@@ -27,11 +27,11 @@ class AppColors {
 /// Ombres douces (profondeur des cartes).
 class AppShadows {
   static List<BoxShadow> get soft => const [
-        BoxShadow(color: Color(0x142B6B48), blurRadius: 18, offset: Offset(0, 8)),
+        BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 8)),
         BoxShadow(color: Color(0x0A000000), blurRadius: 3, offset: Offset(0, 1)),
       ];
   static List<BoxShadow> get raised => const [
-        BoxShadow(color: Color(0x262B6B48), blurRadius: 28, offset: Offset(0, 14)),
+        BoxShadow(color: Color(0x1F000000), blurRadius: 28, offset: Offset(0, 14)),
         BoxShadow(color: Color(0x0F000000), blurRadius: 6, offset: Offset(0, 2)),
       ];
 }
@@ -92,7 +92,7 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFFCADBD0),
+          disabledBackgroundColor: const Color(0xFFE2E2DE),
           disabledForegroundColor: Colors.white,
           elevation: 0,
           minimumSize: const Size(64, 52),
@@ -153,7 +153,7 @@ class AppTheme {
         color: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 4,
-        shadowColor: const Color(0x332B6B48),
+        shadowColor: const Color(0x1F000000),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppColors.line)),
       ),

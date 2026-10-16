@@ -488,9 +488,9 @@ class _TravelHeroState extends State<_TravelHero>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: const [
-              Color(0xFF1F5E3E),
-              AppColors.primary,
-              Color(0xFF58B07F),
+              AppColors.ink,
+              Color(0xFF2B2E2C),
+              AppColors.ink,
             ],
             begin: Alignment.lerp(Alignment.topLeft, Alignment.centerLeft, v)!,
             end: Alignment.lerp(Alignment.bottomRight, Alignment.topRight, v)!,

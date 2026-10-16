@@ -92,6 +92,7 @@ flutter:
 
   assets:
     - assets/3d/
+    - assets/photos/
     - assets/voyages/rahimo-transport/
     - assets/voyages/elitis-express/
     - assets/voyages/tsr-express/

@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../config/theme.dart';
 import '../../data/models/restaurant.dart';
 import '../../widgets/common.dart';
+import '../../widgets/icon3d.dart';
 import '../../widgets/qr_link_sheet.dart';
 
 /// Photo réseau avec repli (icône) si l'image est absente ou ne charge pas.
@@ -22,8 +23,11 @@ class PhotoBox extends StatelessWidget {
     final fallback = Container(
       width: size,
       height: h,
-      color: AppColors.peach,
-      child: Icon(icon, color: AppColors.accent, size: (size < h ? size : h) * 0.45),
+      color: AppColors.mint,
+      alignment: Alignment.center,
+      child: icon == Icons.restaurant_rounded
+          ? Icon3D(Ico3D.food, size: (size < h ? size : h) * 0.62, shadow: false)
+          : Icon(icon, color: AppColors.accent, size: (size < h ? size : h) * 0.45),
     );
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),

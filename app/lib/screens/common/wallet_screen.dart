@@ -44,7 +44,7 @@ class WalletScreen extends ConsumerWidget {
               return Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: balance < 0 ? AppColors.danger : AppColors.ink,
+                  gradient: LinearGradient(colors: balance < 0 ? [AppColors.danger, const Color(0xFF9B2C2C)] : [AppColors.primary, AppColors.primaryDark]),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

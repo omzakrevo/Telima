@@ -32,7 +32,7 @@ class DriverEarningsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.ink,
+                gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryDark]),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

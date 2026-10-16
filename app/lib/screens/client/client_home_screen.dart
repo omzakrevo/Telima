@@ -17,16 +17,17 @@ import '../../widgets/service_slider.dart';
 import '../common/notifications_screen.dart';
 
 /// Accueil client : en-tête sombre avec suivi par code, raccourcis, livraison en cours, bannières, navigation avec bouton « Envoyer ».
-/// Style épuré : fond blanc cassé, orange pour l'action principale, texte anthracite, grands arrondis.
+/// Style épuré, aux couleurs du logo : vert Telima pour les actions, orange en petit accent, texte anthracite.
 class _H {
-  static const bg = Color(0xFFFAFAF8);
-  static const gray = Color(0xFFF2F2EF); // surfaces douces
-  static const line = Color(0xFFE9E9E5);
-  static const hero = Color(0xFF181A19);
-  static const orange = AppColors.accent;
-  static const cream = Color(0xFFFFF3E6);
-  static const muted = Color(0xFF8A8F8C);
-  static const ok = Color(0xFF0B7A4B);
+  static const bg = AppColors.surface;
+  static const gray = AppColors.field; // surfaces douces
+  static const line = AppColors.line;
+  static const hero = AppColors.ink;
+  static const orange =
+      AppColors.accent; // petit accent (en attente, étape en cours)
+  static const cream = AppColors.backdrop; // bannières vert pâle
+  static const muted = AppColors.textMuted;
+  static const ok = AppColors.primaryDark;
   static const sheetBg = Colors.white;
 }
 
@@ -187,7 +188,7 @@ class _ClientHomeScreenState extends ConsumerState<ClientHomeScreen> {
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          color: _H.orange,
+          color: AppColors.primary,
           onRefresh: () async {
             ref.invalidate(myActiveDeliveriesProvider);
             ref.invalidate(myBusinessesProvider);
@@ -529,12 +530,12 @@ class _Tile extends StatelessWidget {
               width: box,
               height: box,
               decoration: BoxDecoration(
-                color: primary ? _H.orange : _H.gray,
+                color: primary ? AppColors.primary : _H.gray,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: primary
                     ? const [
                         BoxShadow(
-                          color: Color(0x40F08A3C),
+                          color: Color(0x403D8B5F),
                           blurRadius: 16,
                           offset: Offset(0, 8),
                         ),
@@ -796,10 +797,18 @@ class _Progress extends StatelessWidget {
                     width: 14,
                     height: 14,
                     decoration: BoxDecoration(
-                      color: i < done ? _H.orange : Colors.white,
+                      color: i < done
+                          ? (i == done - 1 && done < 4
+                                ? _H.orange
+                                : AppColors.primary)
+                          : Colors.white,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: i < done ? _H.orange : const Color(0xFFD3D5D2),
+                        color: i < done
+                            ? (i == done - 1 && done < 4
+                                  ? _H.orange
+                                  : AppColors.primary)
+                            : const Color(0xFFD3D5D2),
                         width: 2,
                       ),
                     ),
@@ -818,7 +827,7 @@ class _Progress extends StatelessWidget {
                         margin: const EdgeInsets.symmetric(horizontal: 3),
                         decoration: BoxDecoration(
                           color: i < done - 1
-                              ? _H.orange
+                              ? AppColors.primary
                               : const Color(0xFFE4E6E3),
                           borderRadius: BorderRadius.circular(2),
                         ),
@@ -874,7 +883,7 @@ class _EmptyShipment extends StatelessWidget {
         FilledButton(
           onPressed: onSend,
           style: FilledButton.styleFrom(
-            backgroundColor: _H.orange,
+            backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
             shape: const StadiumBorder(),
             minimumSize: const Size(0, 40),
@@ -975,12 +984,12 @@ class _HomeNav extends StatelessWidget {
                             width: 62,
                             height: 62,
                             decoration: BoxDecoration(
-                              color: _H.orange,
+                              color: AppColors.primary,
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 4),
                               boxShadow: const [
                                 BoxShadow(
-                                  color: Color(0x59F08A3C),
+                                  color: Color(0x593D8B5F),
                                   blurRadius: 18,
                                   offset: Offset(0, 8),
                                 ),
@@ -1037,7 +1046,7 @@ class _NavItem extends StatelessWidget {
       padding: const EdgeInsets.only(top: 10),
       child: Column(
         children: [
-          Icon(icon, size: 24, color: active ? _H.orange : _H.muted),
+          Icon(icon, size: 24, color: active ? AppColors.primary : _H.muted),
           const SizedBox(height: 3),
           Text(
             label,
@@ -1046,7 +1055,7 @@ class _NavItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 10.5,
               fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-              color: active ? _H.orange : _H.muted,
+              color: active ? AppColors.primary : _H.muted,
             ),
           ),
         ],

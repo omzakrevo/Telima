@@ -106,7 +106,7 @@ class SystemNotifications {
           importance: Importance.max,
           priority: Priority.high,
           icon: 'ic_stat_telima',
-          color: const Color(0xFFF08A3C),
+          color: const Color(0xFF3D8B5F),
           tag: tagFor(n.id),
           styleInformation: BigTextStyleInformation(n.body),
           category: AndroidNotificationCategory.message,

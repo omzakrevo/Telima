@@ -38,7 +38,10 @@ class ProfileScreen extends ConsumerWidget {
               clipper: const WaveClipper(depth: 30),
               child: Container(
                 height: 150,
-                decoration: const BoxDecoration(color: AppColors.ink),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [AppColors.primary, AppColors.primaryDark],
+                      begin: Alignment.topLeft, end: Alignment.bottomRight),
+                ),
               ),
             ),
             Positioned(

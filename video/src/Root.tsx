@@ -4,6 +4,7 @@ import { BoutiqueVideo, BOUTIQUE_TOTAL_FRAMES, BOUTIQUE_FPS } from "./BoutiqueVi
 import { TicketsVideo, TICKETS_TOTAL_FRAMES, TICKETS_FPS } from "./TicketsVideo";
 import { LivreurVideo, LIVREUR_TOTAL_FRAMES, LIVREUR_FPS } from "./LivreurVideo";
 import { CommanderVideo, COMMANDER_TOTAL_FRAMES, COMMANDER_FPS } from "./CommanderVideo";
+import { BoutiqueTutoVideo, BOUTIQUE_TUTO_TOTAL_FRAMES, RestaurantTutoVideo, RESTAURANT_TUTO_TOTAL_FRAMES, TUTO_FPS } from "./CommercesTuto";
 
 export const Root: React.FC = () => {
   return (
@@ -45,6 +46,22 @@ export const Root: React.FC = () => {
       component={CommanderVideo}
       durationInFrames={COMMANDER_TOTAL_FRAMES}
       fps={COMMANDER_FPS}
+      width={1080}
+      height={1920}
+    />
+    <Composition
+      id="BoutiqueTutoVertical"
+      component={BoutiqueTutoVideo}
+      durationInFrames={BOUTIQUE_TUTO_TOTAL_FRAMES}
+      fps={TUTO_FPS}
+      width={1080}
+      height={1920}
+    />
+    <Composition
+      id="RestaurantTutoVertical"
+      component={RestaurantTutoVideo}
+      durationInFrames={RESTAURANT_TUTO_TOTAL_FRAMES}
+      fps={TUTO_FPS}
       width={1080}
       height={1920}
     />

@@ -10,6 +10,8 @@
     "render:tickets": "remotion render src/index.ts TicketsVertical out/telima-tickets-9x16.mp4",
     "render:livreur": "remotion render src/index.ts LivreurVertical out/telima-devenir-livreur-9x16.mp4",
     "render:commander": "remotion render src/index.ts CommanderVertical out/telima-commander-9x16.mp4",
+    "render:boutique-tuto": "remotion render src/index.ts BoutiqueTutoVertical out/telima-creer-boutique-9x16.mp4",
+    "render:restaurant-tuto": "remotion render src/index.ts RestaurantTutoVertical out/telima-creer-restaurant-9x16.mp4",
     "still:tickets": "remotion still src/index.ts TicketsVertical out/apercu-tickets.png --frame=300",
     "still:boutiques": "remotion still src/index.ts BoutiquesVertical out/apercu-boutiques.png --frame=600"
   },

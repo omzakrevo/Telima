@@ -5,8 +5,10 @@
 // (lignes CARTE) et video/capture/poser_tuiles.py pose ensuite les vraies tuiles OpenStreetMap sous la carte.
 // Données fictives (boutique « Mode d'Awa », restaurant « Chez Tantie Awa ») ; articles et plats sans photo.
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show SynchronousFuture;
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart' show FlutterMap, MapCamera, MarkerLayer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,6 +69,8 @@ Map<String, dynamic> _shopJson({bool empty = false}) => {
       'owner_id': 'u1',
       'name': 'Mode d’Awa',
       'shop_type': 'Vêtements femme',
+      'logo_path': 'demo/portant-cintres.jpg',
+      'cover_path': 'demo/portant-robes.jpg',
       'description': 'Robes en pagne wax, ensembles et accessoires. Coupe sur mesure.',
       'phone': '+22670000000',
       'neighborhood': 'Gounghin',
@@ -93,11 +97,11 @@ Map<String, dynamic> _shopJson({bool empty = false}) => {
       'items': empty
           ? []
           : [
-              {'id': 'p1', 'category_id': 'c1', 'name': 'Robe en pagne wax', 'price': 15000, 'is_available': true, 'sizes': ['S', 'M', 'L', 'XL'], 'colors': ['Rouge', 'Bleu'], 'stock': 5},
-              {'id': 'p2', 'category_id': 'c1', 'name': 'Ensemble pagne', 'price': 18000, 'is_available': true, 'sizes': ['M', 'L'], 'stock': 3},
-              {'id': 'p3', 'category_id': 'c2', 'name': 'Sandales en cuir', 'price': 7500, 'is_available': true, 'sizes': ['38', '39', '40', '41'], 'stock': 8},
-              {'id': 'p4', 'category_id': 'c3', 'name': 'Sac brodé', 'price': 9000, 'is_available': true, 'stock': 2},
-              {'id': 'p5', 'category_id': 'c3', 'name': 'Foulard', 'price': 2500, 'is_available': true},
+              {'id': 'p1', 'category_id': 'c1', 'name': 'Robe en pagne wax', 'photo_path': 'demo/femme-robe-wax.jpg', 'description': 'Pagne wax 100 % coton, coupe droite, manches longues.', 'price': 15000, 'is_available': true, 'sizes': ['S', 'M', 'L', 'XL'], 'colors': ['Rouge', 'Bleu'], 'stock': 5},
+              {'id': 'p2', 'category_id': 'c1', 'name': 'Robe d’été imprimée', 'photo_path': 'demo/portant-robes.jpg', 'price': 12000, 'is_available': true, 'sizes': ['M', 'L'], 'stock': 3},
+              {'id': 'p3', 'category_id': 'c2', 'name': 'Sandales en cuir', 'photo_path': 'demo/sandales-cuir.jpg', 'price': 7500, 'is_available': true, 'sizes': ['38', '39', '40', '41'], 'stock': 8},
+              {'id': 'p4', 'category_id': 'c3', 'name': 'Sac en rotin', 'photo_path': 'demo/sac-rotin.jpg', 'price': 9000, 'is_available': true, 'stock': 2},
+              {'id': 'p5', 'category_id': 'c3', 'name': 'Foulard', 'photo_path': 'demo/femmes-foulards.jpg', 'price': 2500, 'is_available': true},
             ],
     };
 
@@ -106,7 +110,9 @@ Map<String, dynamic> _restaurantJson({bool empty = false}) => {
       'slug': 'chez-tantie-awa',
       'owner_id': 'u1',
       'name': 'Chez Tantie Awa',
-      'cuisine': 'Poulet braisé, Riz gras, Tô',
+      'cuisine': 'Poulet braisé, Riz gras, Brochettes',
+      'logo_path': 'demo/poulet-main.jpg',
+      'cover_path': 'demo/table-repas.jpg',
       'description': 'Cuisine burkinabè faite maison, tous les jours.',
       'phone': '+22670000000',
       'neighborhood': 'Gounghin',
@@ -130,25 +136,25 @@ Map<String, dynamic> _restaurantJson({bool empty = false}) => {
       'items': empty
           ? []
           : [
-              {'id': 'i1', 'category_id': 'c1', 'name': 'Poulet braisé', 'description': 'Demi-poulet, attiéké ou alloco', 'price': 3500, 'is_available': true},
-              {'id': 'i2', 'category_id': 'c1', 'name': 'Riz gras', 'price': 1000, 'is_available': true},
-              {'id': 'i3', 'category_id': 'c1', 'name': 'Tô sauce gombo', 'price': 750, 'is_available': true},
-              {'id': 'i4', 'category_id': 'c1', 'name': 'Attiéké poisson', 'price': 2000, 'is_available': true},
-              {'id': 'i5', 'category_id': 'c2', 'name': 'Bissap', 'price': 500, 'is_available': true},
-              {'id': 'i6', 'category_id': 'c2', 'name': 'Jus de gingembre', 'price': 500, 'is_available': true},
+              {'id': 'i1', 'category_id': 'c1', 'name': 'Poulet braisé', 'photo_path': 'demo/poulet-braise-riz.jpg', 'description': 'Demi-poulet, riz ou alloco', 'price': 3500, 'is_available': true},
+              {'id': 'i2', 'category_id': 'c1', 'name': 'Riz gras au poulet', 'photo_path': 'demo/riz-gras.jpg', 'price': 1500, 'is_available': true},
+              {'id': 'i3', 'category_id': 'c1', 'name': 'Brochettes grillées', 'photo_path': 'demo/brochettes.jpg', 'price': 2000, 'is_available': true},
+              {'id': 'i4', 'category_id': 'c1', 'name': 'Poisson frit et riz', 'photo_path': 'demo/poisson-frit.jpg', 'price': 2500, 'is_available': true},
+              {'id': 'i5', 'category_id': 'c2', 'name': 'Bissap', 'photo_path': 'demo/bissap.jpg', 'price': 500, 'is_available': true},
+              {'id': 'i6', 'category_id': 'c2', 'name': 'Jus de gingembre', 'photo_path': 'demo/jus-gingembre.jpg', 'price': 500, 'is_available': true},
             ],
     };
 
 final _now = DateTime.now();
 
-ShopOrder _shopOrder(String code, String status, int minutes, {String mode = 'delivery'}) => ShopOrder({
+ShopOrder _shopOrder(String code, String status, int minutes, {String mode = 'delivery', (String, String) who = ('Mariam Kaboré', '+22676451289')}) => ShopOrder({
       'id': 'o-$code',
       'code': code,
       'shop_id': 's1',
       'mode': mode,
       'status': status,
-      'customer_name': 'Mariam Kaboré',
-      'customer_phone': '+22676451289',
+      'customer_name': who.$1,
+      'customer_phone': who.$2,
       'dropoff_address': 'Ouaga 2000, rue 15.18',
       'note': mode == 'delivery' ? 'Taille M s’il vous plaît' : null,
       'items_total': 17500,
@@ -185,7 +191,7 @@ RestaurantOrder _restaurantOrder(String code, String status, int minutes, {Strin
       ],
     });
 
-List _overrides({bool emptyShop = false, bool emptyRestaurant = false, bool noShops = false}) => [
+List _overrides({bool emptyShop = false, bool emptyRestaurant = false, bool noShops = false, bool live = false}) => [
       sharedPrefsProvider.overrideWithValue(_prefs),
       supabaseProvider.overrideWithValue(_fakeClient),
       currentUserProvider.overrideWithValue(_user),
@@ -205,8 +211,15 @@ List _overrides({bool emptyShop = false, bool emptyRestaurant = false, bool noSh
       myShopProvider.overrideWith((ref, _) async => Shop(_shopJson(empty: emptyShop))),
       shopBySlugProvider.overrideWith((ref, _) async => Shop(_shopJson())),
       shopReviewsProvider.overrideWith((ref, _) async => <ShopReview>[]),
-      shopOrdersProvider.overrideWith((ref, _) async => [_shopOrder('BOU-2026-000041', 'sent', 3), _shopOrder('BOU-2026-000038', 'preparing', 26, mode: 'pickup')]),
-      shopDashboardProvider.overrideWith((ref, _) async => {'orders_today': 6, 'sales_today': 74500, 'pending': 1}),
+      shopOrdersProvider.overrideWith((ref, _) async => live
+          ? [
+              _shopOrder('BOU-2026-000052', 'sent', 1, who: ('Mariam Kaboré', '+22676451289')),
+              _shopOrder('BOU-2026-000051', 'sent', 2, who: ('Fatim Ouédraogo', '+22670884512'), mode: 'pickup'),
+              _shopOrder('BOU-2026-000050', 'sent', 3, who: ('Aïcha Sawadogo', '+22665123478')),
+              _shopOrder('BOU-2026-000049', 'sent', 4, who: ('Rasmata Zongo', '+22678459630')),
+            ]
+          : [_shopOrder('BOU-2026-000041', 'sent', 3), _shopOrder('BOU-2026-000038', 'preparing', 26, mode: 'pickup')]),
+      shopDashboardProvider.overrideWith((ref, _) async => live ? {'orders_today': 23, 'sales_today': 312500, 'pending': 4} : {'orders_today': 6, 'sales_today': 74500, 'pending': 1}),
       // Restaurant
       myRestaurantsProvider.overrideWith((ref) async => noShops ? <Restaurant>[] : [Restaurant(_restaurantJson())]),
       myRestaurantProvider.overrideWith((ref, _) async => Restaurant(_restaurantJson(empty: emptyRestaurant))),
@@ -231,6 +244,32 @@ Future<void> _loadFonts() async {
   }
 }
 
+
+/// Photos libres de droit (domaine public / CC0, voir video/public/photos/CREDITS.txt) posées dans le cache d'images
+/// sous l'adresse que l'application demande : Image.network ne charge rien dans flutter test.
+const _photosDir = String.fromEnvironment('PHOTOS_DIR');
+const _demoPhotos = [
+  'portant-cintres', 'portant-robes', 'femme-robe-wax', 'sandales-cuir', 'sac-rotin', 'femmes-foulards',
+  'poulet-main', 'table-repas', 'poulet-braise-riz', 'riz-gras', 'brochettes', 'poisson-frit', 'bissap', 'jus-gingembre',
+];
+
+Future<void> _injectPhotos(WidgetTester tester) async {
+  if (_photosDir.isEmpty) return;
+  final cache = PaintingBinding.instance.imageCache;
+  await tester.runAsync(() async {
+    for (final n in _demoPhotos) {
+      final f = File('$_photosDir/$n.jpg');
+      if (!f.existsSync()) continue;
+      final codec = await ui.instantiateImageCodec(await f.readAsBytes(), targetWidth: 640);
+      final frame = await codec.getNextFrame();
+      for (final url in [shopPhotoUrl('demo/$n.jpg')!, restaurantPhotoUrl('demo/$n.jpg')!]) {
+        final info = ImageInfo(image: frame.image.clone());
+        cache.putIfAbsent(NetworkImage(url), () => OneFrameImageStreamCompleter(SynchronousFuture(info)));
+      }
+    }
+  });
+}
+
 Future<void> _settle(WidgetTester tester, {int waitMs = 400}) async {
   for (var k = 0; k < 10; k++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -246,6 +285,7 @@ Future<void> _shot(WidgetTester tester, Widget screen, String name, double heigh
   tester.view.physicalSize = Size(430, height) * 3;
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+  await _injectPhotos(tester);
   await tester.pumpWidget(ProviderScope(
     overrides: [...(extra ?? _overrides())],
     child: MaterialApp(theme: AppTheme.light(), debugShowCheckedModeBanner: false, home: screen),
@@ -363,7 +403,7 @@ void main() {
 
   testWidgets('r3 formulaire', (t) => _shot(t, const RestaurantFormScreen(), 'r3-formulaire', 2000, then: (t) async {
         await _type(t, 'Nom du restaurant', 'Chez Tantie Awa');
-        await _type(t, 'Spécialités', 'Poulet braisé, Riz gras, Tô');
+        await _type(t, 'Spécialités', 'Poulet braisé, Riz gras, Brochettes');
         await _type(t, 'Présentation (facultatif)', 'Cuisine burkinabè faite maison, tous les jours.');
         await _type(t, 'Quartier', 'Gounghin');
         await _type(t, 'Horaires', '11h – 23h, tous les jours');
@@ -387,7 +427,7 @@ void main() {
         await t.pump(const Duration(seconds: 1));
         await _type(t, 'Nom du plat', 'Poulet braisé');
         await _type(t, 'Prix (FCFA)', '3500');
-        await _type(t, 'Description (facultatif)', 'Demi-poulet, attiéké ou alloco');
+        await _type(t, 'Description (facultatif)', 'Demi-poulet, riz ou alloco');
         await _top(t);
       }));
 
@@ -404,4 +444,14 @@ void main() {
   testWidgets('r8 commandes', (t) => _shot(t, const RestaurantManageScreen(restaurantId: 'r1'), 'r8-commandes', 1300));
 
   testWidgets('r9 page client', (t) => _shot(t, const RestaurantPublicScreen(slug: 'chez-tantie-awa'), 'r9-page-client', 1300));
+
+  // ───────── Vente en live (boutique) ─────────
+  testWidgets('b9 taille', (t) => _shot(t, const ShopPublicScreen(slug: 'mode-d-awa'), 'b9-taille', 1300, then: (t) async {
+        await _tap(t, find.byTooltip('Ajouter'));
+        await t.pump(const Duration(seconds: 1));
+        await _tap(t, find.text('M').last);
+        await _tap(t, find.text('Rouge').last);
+      }));
+
+  testWidgets('b10 commandes live', (t) => _shot(t, const ShopManageScreen(shopId: 's1'), 'b10-commandes-live', 1500, extra: _overrides(live: true)));
 }

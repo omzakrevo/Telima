@@ -1,7 +1,7 @@
 import React from "react";
-import { AbsoluteFill, Audio, Easing, Img, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { Backdrop, C, Highlight, Icon3D, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
-import { Caption, FPS, ICON_CHECK, ICON_SCOOTER, PopCard, ScreenPhone, StepBadge, Svg, Tap, sec } from "./EcranTelephone";
+import { AbsoluteFill, Audio, Img, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { Backdrop, C, Highlight, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
+import { Caption, FPS, ICON_CHECK, PhotoCard, PopCard, ScreenPhone, StepBadge, Svg, Tap, sec } from "./EcranTelephone";
 
 /*
  * Vidéo verticale 9:16 « Devenir livreur Telima », pas à pas, avec les VRAIS écrans de l'application
@@ -50,25 +50,17 @@ const Scene1: React.FC = () => {
   const frame = useCurrentFrame();
   const first = interpolate(frame, [T(0, 1.95), T(0, 2.2)], [1, 0], clamp);
   const second = interpolate(frame, [T(0, 2.1), T(0, 2.35)], [0, 1], clamp);
-  const ride = interpolate(frame, [T(0, 2.2), T(0, 6.3)], [-320, 1400], { ...clamp, easing: Easing.inOut(Easing.quad) });
   return (
     <Out frames={FR[0]}>
       <div style={{ opacity: first }}>
         <Words text="Tu as une moto ?" top={300} size={112} stagger={4} />
-        <div style={{ position: "absolute", top: 640, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <Icon3D name="motor_scooter" size={520} delay={6} float={10} />
-        </div>
+        <PhotoCard src="moto-livreur" at={6} x={80} y={620} w={920} h={690} rotate={-3} />
       </div>
       <div style={{ opacity: second }}>
         <Words text="Deviens livreur" top={290} size={118} delay={T(0, 2.15)} stagger={5} />
         <Highlight text="Telima" top={450} delay={T(0, 3.0)} size={110} bg={C.orange} color={C.white} />
-        <div style={{ position: "absolute", top: 760, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 40 }}>
-          <Icon3D name="money_bag" size={300} delay={T(0, 1.4)} float={12} />
-          <Icon3D name="package" size={260} delay={T(0, 3.6)} float={9} style={{ marginTop: 60 }} />
-        </div>
-        <div style={{ position: "absolute", top: 1180, left: ride }}>
-          <Svg d={ICON_SCOOTER} size={200} color="rgba(255,255,255,0.9)" />
-        </div>
+        <PhotoCard src="moto-livreur" at={T(0, 2.3)} x={60} y={680} w={640} h={480} rotate={-4} from="left" />
+        <PhotoCard src="scooter-livraison" at={T(0, 3.6)} x={540} y={930} w={480} h={420} rotate={5} from="right" />
         <Highlight text="étape par étape" top={1480} delay={T(0, 5.0)} size={78} />
       </div>
     </Out>
@@ -212,7 +204,6 @@ const Scene7: React.FC = () => {
   const frame = useCurrentFrame();
   const logo = usePop(T(6, 48.3), 10, 150);
   const pill = usePop(T(6, 50.4), 12);
-  const ride = interpolate(frame, [T(6, 49.0), T(6, 52.6)], [-260, 1340], { ...clamp, easing: Easing.inOut(Easing.cubic) });
   return (
     <AbsoluteFill style={{ fontFamily }}>
       <div style={{ position: "absolute", top: 330, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
@@ -225,9 +216,7 @@ const Scene7: React.FC = () => {
         Livreurs
       </div>
       <Words text="Deviens livreur dès aujourd'hui" top={1000} size={78} delay={T(6, 48.96)} stagger={5} />
-      <div style={{ position: "absolute", top: 1390, left: ride }}>
-        <Svg d={ICON_SCOOTER} size={170} color="rgba(255,255,255,0.9)" />
-      </div>
+      <PhotoCard src="moto-livreur" at={T(6, 49.6)} x={250} y={1170} w={580} h={340} rotate={-2} from="right" />
       <div style={{ position: "absolute", top: 1560, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 18px 14px 32px", borderRadius: 999, background: C.greenDark, border: "3px solid rgba(255,255,255,0.35)", transform: `scale(${pill})` }}>
           <span style={{ color: C.white, fontWeight: 700, fontSize: 40 }}>S'inscrire sur</span>

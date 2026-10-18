@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Audio, Easing, Img, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { Backdrop, C, Highlight, Icon3D, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
-import { Caption, FPS, Ring, ScreenPhone, StepBadge, Svg, Tap, ICON_SCOOTER, sec } from "./EcranTelephone";
+import { Backdrop, C, Highlight, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
+import { Caption, FPS, PhotoCard, Ring, ScreenPhone, StepBadge, Tap, sec } from "./EcranTelephone";
 
 /*
  * Vidéos verticales 9:16 « pas à pas » : créer sa boutique (BoutiqueTutoVertical) et créer son restaurant
@@ -52,7 +52,8 @@ type Cfg = {
   cuts: number[];
   // accroche
   hookQ: string;
-  hookIcon: string;
+  hookPhoto: string;
+  hookPhoto2: string;
   hookA: string;
   hookAt: number;
   hookB: string;
@@ -98,17 +99,13 @@ const Hook: React.FC<{ c: Cfg; frames: number }> = ({ c, frames }) => {
     <Out frames={frames}>
       <div style={{ opacity: first }}>
         <Words text={c.hookQ} top={280} size={100} stagger={3} />
-        <div style={{ position: "absolute", top: 760, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <Icon3D name={c.hookIcon} size={480} delay={4} float={10} />
-        </div>
+        <PhotoCard src={c.hookPhoto} at={4} x={80} y={640} w={920} h={680} rotate={-3} />
       </div>
       <div style={{ opacity: second }}>
         <Words text={c.hookA} top={300} size={112} delay={T(0, c.hookAt)} stagger={5} />
         <Highlight text={c.hookB} top={470} delay={T(0, c.hookBAt)} size={100} bg={C.orange} color={C.white} />
-        <div style={{ position: "absolute", top: 760, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 50 }}>
-          <Icon3D name={c.hookIcon} size={300} delay={T(0, c.hookAt + 0.2)} float={12} />
-          <Icon3D name="convenience_store" size={260} delay={T(0, c.hookBAt + 0.3)} float={9} style={{ marginTop: 50 }} />
-        </div>
+        <PhotoCard src={c.hookPhoto} at={T(0, c.hookAt + 0.1)} x={60} y={660} w={600} h={520} rotate={-4} from="left" />
+        <PhotoCard src={c.hookPhoto2} at={T(0, c.hookBAt + 0.3)} x={560} y={900} w={460} h={460} rotate={5} from="right" />
         <Highlight text="étape par étape" top={1430} delay={T(0, c.hookStepAt)} size={78} />
       </div>
     </Out>
@@ -171,7 +168,6 @@ const Step2: React.FC<{ c: Cfg; frames: number }> = ({ c, frames }) => {
 const Step5: React.FC<{ c: Cfg; frames: number }> = ({ c, frames }) => {
   const frame = useCurrentFrame();
   const T = makeT(c.cuts);
-  const ride = interpolate(frame, [T(5, c.orderDriverAt), T(5, c.orderDriverAt + 1.8)], [-300, 1340], { ...clamp, easing: Easing.inOut(Easing.cubic) });
   return (
     <Out frames={frames}>
       <StepBadge n={5} of={5} />
@@ -187,10 +183,7 @@ const Step5: React.FC<{ c: Cfg; frames: number }> = ({ c, frames }) => {
         ]}
       />
       <Tap x={322} y={c.acceptY + 27} at={T(5, c.orderAcceptAt + 0.25)} scrollY={0} />
-      <div style={{ position: "absolute", top: 1440, left: ride, display: "flex", alignItems: "flex-end" }}>
-        <Svg d={ICON_SCOOTER} size={190} color="rgba(255,255,255,0.95)" />
-        <Icon3D name="package" size={96} style={{ marginLeft: -66, marginBottom: 90 }} />
-      </div>
+      <PhotoCard src="moto-livreur" at={T(5, c.orderDriverAt)} x={300} y={1260} w={560} h={360} rotate={-3} from="right" label="Livreur Telima" />
       <Caption
         items={[
           { at: T(5, c.cuts[5] + 0.7), text: "Nouvelle commande" },
@@ -220,10 +213,8 @@ const Outro: React.FC<{ c: Cfg; i: number }> = ({ c, i }) => {
         {c.outroSub}
       </div>
       <Words text={c.outroLine} top={1000} size={80} delay={T(i, c.outroLineAt)} stagger={5} />
-      <div style={{ position: "absolute", top: 1300, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 60 }}>
-        <Icon3D name={c.hookIcon} size={170} delay={T(i, c.outroLineAt + 0.6)} float={8} />
-        <Icon3D name="motor_scooter" size={170} delay={T(i, c.outroLineAt + 0.8)} float={8} />
-      </div>
+      <PhotoCard src={c.hookPhoto} at={T(i, c.outroLineAt + 0.5)} x={110} y={1180} w={420} h={330} rotate={-4} from="left" />
+      <PhotoCard src="moto-livreur" at={T(i, c.outroLineAt + 0.8)} x={550} y={1190} w={420} h={320} rotate={4} from="right" />
       <div style={{ position: "absolute", top: 1560, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 18px 14px 32px", borderRadius: 999, background: C.greenDark, border: "3px solid rgba(255,255,255,0.35)", transform: `scale(${pill})` }}>
           <span style={{ color: C.white, fontWeight: 700, fontSize: 40 }}>Créer sur</span>
@@ -256,7 +247,8 @@ const BOUTIQUE: Cfg = {
   audio: "voix-off-boutique-tuto.mp3",
   cuts: [0, 6.8, 12.65, 24.95, 31.75, 38.05, 43.95, 48.6],
   hookQ: "Tu vends des habits ?",
-  hookIcon: "shopping_bags",
+  hookPhoto: "femme-robe-wax",
+  hookPhoto2: "portant-robes",
   hookA: "Crée ta boutique",
   hookAt: 2.8,
   hookB: "sur Telima",
@@ -388,7 +380,8 @@ const RESTAURANT: Cfg = {
   audio: "voix-off-restaurant-tuto.mp3",
   cuts: [0, 6.05, 11.8, 25.35, 31.05, 36.6, 42.5, 47.0],
   hookQ: "Tu as un restaurant ou un maquis ?",
-  hookIcon: "pot_of_food",
+  hookPhoto: "poulet-main",
+  hookPhoto2: "brochettes",
   hookA: "Mets ton menu",
   hookAt: 1.92,
   hookB: "sur Telima",

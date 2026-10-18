@@ -1,7 +1,7 @@
 import React from "react";
-import { AbsoluteFill, Audio, Easing, Img, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { Backdrop, C, Highlight, Icon3D, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
-import { Caption, FPS, ICON_SCOOTER, ScreenPhone, StepBadge, Svg, Tap, sec } from "./EcranTelephone";
+import { AbsoluteFill, Audio, Img, Series, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { Backdrop, C, Highlight, Out, Words, clamp, fontFamily, usePop } from "./BoutiqueVideo";
+import { Caption, FPS, PhotoCard, ScreenPhone, StepBadge, Tap, sec } from "./EcranTelephone";
 
 /*
  * Vidéo verticale 9:16 « Commander une livraison sur Telima », pas à pas, avec les VRAIS écrans de l'application
@@ -22,26 +22,17 @@ const Scene1: React.FC = () => {
   const frame = useCurrentFrame();
   const first = interpolate(frame, [T(0, 1.0), T(0, 1.25)], [1, 0], clamp);
   const second = interpolate(frame, [T(0, 1.15), T(0, 1.4)], [0, 1], clamp);
-  const ride = interpolate(frame, [T(0, 2.2), T(0, 4.6)], [-360, 1400], { ...clamp, easing: Easing.inOut(Easing.quad) });
   return (
     <Out frames={FR[0]}>
       <div style={{ opacity: first }}>
         <Words text="Un colis à envoyer ?" top={300} size={110} stagger={3} />
-        <div style={{ position: "absolute", top: 660, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-          <Icon3D name="package" size={480} delay={4} float={10} />
-        </div>
+        <PhotoCard src="smartphone-main" at={4} x={80} y={620} w={920} h={620} rotate={-3} />
       </div>
       <div style={{ opacity: second }}>
         <Words text="Un livreur vient le chercher" top={270} size={96} delay={T(0, 1.4)} stagger={4} />
         <Highlight text="et le dépose à destination" top={560} delay={T(0, 3.3)} size={66} bg={C.orange} color={C.white} />
-        <div style={{ position: "absolute", top: 820, left: ride, display: "flex", alignItems: "flex-end" }}>
-          <Svg d={ICON_SCOOTER} size={260} color="rgba(255,255,255,0.95)" />
-          <Icon3D name="package" size={130} style={{ marginLeft: -90, marginBottom: 120 }} />
-        </div>
-        <div style={{ position: "absolute", top: 1120, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 70 }}>
-          <Icon3D name="round_pushpin" size={190} delay={T(0, 3.9)} float={8} />
-          <Icon3D name="check_mark_button" size={190} delay={T(0, 4.2)} float={8} />
-        </div>
+        <PhotoCard src="moto-livreur" at={T(0, 2.0)} x={60} y={720} w={660} h={490} rotate={-4} from="left" />
+        <PhotoCard src="smartphone-main" at={T(0, 3.9)} x={560} y={980} w={460} h={380} rotate={5} from="right" />
         <Highlight text="étape par étape" top={1480} delay={T(0, 6.0)} size={78} />
       </div>
     </Out>
@@ -215,7 +206,6 @@ const Scene8: React.FC = () => {
   const frame = useCurrentFrame();
   const logo = usePop(T(7, 42.0), 10, 150);
   const pill = usePop(T(7, 44.4), 12);
-  const ride = interpolate(frame, [T(7, 42.8), T(7, 46.6)], [-300, 1340], { ...clamp, easing: Easing.inOut(Easing.cubic) });
   return (
     <AbsoluteFill style={{ fontFamily }}>
       <div style={{ position: "absolute", top: 330, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
@@ -228,10 +218,7 @@ const Scene8: React.FC = () => {
         Livraison de colis
       </div>
       <Words text="Tes colis livrés en toute simplicité" top={1000} size={74} delay={T(7, 42.66)} stagger={5} />
-      <div style={{ position: "absolute", top: 1380, left: ride, display: "flex", alignItems: "flex-end" }}>
-        <Svg d={ICON_SCOOTER} size={170} color="rgba(255,255,255,0.9)" />
-        <Icon3D name="package" size={86} style={{ marginLeft: -60, marginBottom: 80 }} />
-      </div>
+      <PhotoCard src="moto-livreur" at={T(7, 43.4)} x={250} y={1170} w={580} h={340} rotate={-2} from="right" />
       <div style={{ position: "absolute", top: 1560, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 18, padding: "14px 18px 14px 32px", borderRadius: 999, background: C.greenDark, border: "3px solid rgba(255,255,255,0.35)", transform: `scale(${pill})` }}>
           <span style={{ color: C.white, fontWeight: 700, fontSize: 40 }}>Commander sur</span>

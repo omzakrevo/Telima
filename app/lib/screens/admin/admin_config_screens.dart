@@ -516,6 +516,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
   final _gaId = TextEditingController();
   final _adsenseId = TextEditingController();
   final _adSlot = TextEditingController();
+  final _clarityId = TextEditingController();
   bool _adsEnabled = false;
   final _supportPhone = TextEditingController();
   final _supportWhatsapp = TextEditingController();
@@ -543,6 +544,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     _gaId.text = g.gaId;
     _adsenseId.text = g.adsenseId;
     _adSlot.text = g.adSlot;
+    _clarityId.text = g.clarityId;
     _adsEnabled = g.adsEnabled;
     _supportPhone.text = s.supportPhone;
     _supportWhatsapp.text = s.supportWhatsapp;
@@ -571,6 +573,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
         'ga_id': _gaId.text.trim(),
         'adsense_id': _adsenseId.text.trim(),
         'ad_slot': _adSlot.text.trim(),
+        'clarity_id': _clarityId.text.trim(),
         'ads_enabled': _adsEnabled,
       });
       await repo.updateSetting('support', {
@@ -715,7 +718,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 const SmsGatewayCard(),
                 const SectionTitle('Messages automatiques (SMS et WhatsApp)'),
                 const OrderMessagingCard(),
-                const SectionTitle('Google Analytics et publicités'),
+                const SectionTitle('Statistiques, comportement des visiteurs et publicités'),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -730,6 +733,16 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                         controller: _gaId,
                         decoration: const InputDecoration(labelText: 'Mesure Google Analytics (G-XXXXXXXXXX)'),
                         validator: (v) => (v == null || v.trim().isEmpty || RegExp(r'^G-[A-Z0-9]{6,}$').hasMatch(v.trim())) ? null : 'Format attendu : G-XXXXXXXXXX',
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _clarityId,
+                        decoration: const InputDecoration(
+                          labelText: 'Microsoft Clarity : identifiant du projet',
+                          helperText: 'Enregistrements de sessions et cartes de chaleur du site web (clarity.microsoft.com)',
+                          helperMaxLines: 2,
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty || RegExp(r'^[a-z0-9]{8,12}$').hasMatch(v.trim())) ? null : 'Format attendu : 10 lettres minuscules et chiffres',
                       ),
                       const SizedBox(height: 12),
                       TextFormField(

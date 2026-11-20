@@ -49,14 +49,15 @@ class AppSettings {
   AppSettings(this.values);
   final Map<String, dynamic> values;
 
-  /// Identifiants Google Analytics / AdSense saisis par l'administrateur.
-  ({String gaId, String adsenseId, String adSlot, bool adsEnabled}) get google {
+  /// Identifiants Google Analytics / AdSense / Microsoft Clarity saisis par l'administrateur.
+  ({String gaId, String adsenseId, String adSlot, bool adsEnabled, String clarityId}) get google {
     final g = values['google'];
     final m = g is Map ? g : const {};
     return (
       gaId: '${m['ga_id'] ?? ''}',
       adsenseId: '${m['adsense_id'] ?? ''}',
       adSlot: '${m['ad_slot'] ?? ''}',
+      clarityId: '${m['clarity_id'] ?? ''}',
       adsEnabled: m['ads_enabled'] == true && '${m['adsense_id'] ?? ''}'.isNotEmpty,
     );
   }

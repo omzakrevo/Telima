@@ -84,14 +84,6 @@
           window.gtag("js", new Date());
           window.gtag("config", g.ga_id);
         }
-        // Microsoft Clarity : enregistrements de sessions et cartes de chaleur (identifiant saisi dans l'espace admin)
-        if (/^[a-z0-9]{8,12}$/.test(g.clarity_id || "")) {
-          (function (c, l, a, r, i, t, y) {
-            c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
-            t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-            y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-          })(window, document, "clarity", "script", g.clarity_id);
-        }
         if (g.ads_enabled && /^ca-pub-\d{10,}$/.test(g.adsense_id || "")) {
           add("https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + g.adsense_id, { crossorigin: "anonymous" });
           adsReady = true;
@@ -99,6 +91,15 @@
         }
       }).catch(function () {});
     })();
+  </script>
+  <script>
+    // Microsoft Clarity (enregistrements de sessions, cartes de chaleur). Chargé sans attendre les réglages.
+    // L'identifiant du projet peut être remplacé dans l'espace admin (Paramètres) : celui-ci sert par défaut.
+    (function (c, l, a, r, i, t, y) {
+      c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+      t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
+      y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+    })(window, document, "clarity", "script", "zgs4p21mje");
   </script>
   <script>
     // Installation comme une application (PWA) : on garde la proposition du navigateur

@@ -738,7 +738,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                       TextFormField(
                         controller: _clarityId,
                         decoration: const InputDecoration(
-                          labelText: 'Microsoft Clarity : identifiant du projet',
+                          labelText: 'Microsoft Clarity : identifiant (facultatif, remplace celui du site)',
                           helperText: 'Enregistrements de sessions et cartes de chaleur du site web (clarity.microsoft.com)',
                           helperMaxLines: 2,
                         ),

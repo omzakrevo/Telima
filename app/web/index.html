@@ -64,6 +64,13 @@
     (function () {
       window.dataLayer = window.dataLayer || [];
       window.gtag = function () { window.dataLayer.push(arguments); };
+      // Google Tag Manager (conteneur GTM-N5WPRJQ9) : démarrage standard puis chargement du conteneur
+      window.dataLayer.push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+      (function () {
+        var g = document.createElement("script"); g.async = true;
+        g.src = "https://www.googletagmanager.com/gtm.js?id=GTM-N5WPRJQ9";
+        document.head.appendChild(g);
+      })();
       var pendingAds = 0, adsReady = false;
       window.telimaTrack = function (name, params) { try { window.gtag("event", name, params || {}); } catch (e) {} };
       window.telimaAdPush = function () {
